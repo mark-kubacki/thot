@@ -3,7 +3,7 @@ from codecs import open
 from datetime import datetime
 import imp
 import logging
-import ConfigParser
+import yaml
 from optparse import OptionParser
 from os import makedirs, getcwd, getlogin
 from os.path import splitext, join, dirname, split, abspath, getctime,\
@@ -257,23 +257,23 @@ class Site(object):
 def quickstart(settings):
     login = getlogin()
 
-    config = ConfigParser.SafeConfigParser()
-    config.add_section('pyll')
     author_name = raw_input("Author Name [%s]: " % login) or login
-    config.set('pyll', 'author_name', author_name)
     author_email_default = '%s@example.org' % login
     author_email = raw_input("Author Email [%s]: " % author_email_default) or author_email_default
-    config.set('pyll', 'author_email', author_email)
     website_url_default = 'http://www.example.org'
     website_url = raw_input("Website URL [%s]: " % website_url_default) or website_url_default
-    config.set('pyll', 'website_url', website_url)
+    config = {'pyll': {
+        'author_name': author_name,
+        'author_email': author_email,
+        'website_url': website_url,
+    }}
 
     # before writing the settings file, make sure the _lib dir exists
     if not exists(settings['lib_dir']):
         makedirs(settings['lib_dir'])
     
-    with open(settings['settings_path'], 'wb') as configfile:
-        config.write(configfile)
+    with open(settings['settings_path'], 'wb', encoding='utf-8') as configfile:
+        configfile.write(yaml.dump(config, default_flow_style=False))
     
     # extract template
     tmpl_path = join(dirname(abspath(__file__)), 'quickstart.tar.gz')
@@ -282,7 +282,7 @@ def quickstart(settings):
     tar.extractall(path=settings['project_dir'])
     tar.close()
 
-    return dict(config.items('pyll'))
+    return config['pyll']
 
 def main():
     parser = OptionParser(version="%prog " + __version__)
@@ -321,9 +321,9 @@ def main():
 
     # read settings file
     if exists(settings['settings_path']):
-        config = ConfigParser.SafeConfigParser()
-        config.read(settings['settings_path'])
-        settings.update(dict(config.items('pyll')))
+        with open(settings['settings_path'], 'rb', encoding='utf-8') as configfile:
+            config = yaml.safe_load(configfile.read())
+        settings.update(config['pyll'])
     logging.debug('settings %s', settings)
 
     # initialize site

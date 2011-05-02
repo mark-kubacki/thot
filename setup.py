@@ -34,6 +34,7 @@ setup(
         'docutils',
         'Jinja2',
         'python-dateutil==1.5',
+        'PyYAML',
     ],
 )
 
