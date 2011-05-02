@@ -126,7 +126,7 @@ class Site(object):
 
                 # parse the page
                 parser_cls = parser.get_parser_for_filename(page['path'])
-                with open(path, 'r', encoding='utf8') as f:
+                with open(path, 'r', encoding='utf-8') as f:
                     parser_inst = parser_cls(self.settings, f.read())
 
                 try:
