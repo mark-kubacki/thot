@@ -1,8 +1,5 @@
-import datetime
-import re
+import yaml
 from os.path import splitext
-
-from dateutil import parser
 
 
 class ParserException(Exception):
@@ -20,57 +17,12 @@ class Parser(object):
 
     def _parse_headers(self):
         """
-        Parses and removes the headers from the source.
+        Parses the headers from the source.
         """
-        META_RE = re.compile(
-            r'^[ ]{0,3}(?P<key>[A-Za-z0-9_-]+):\s*(?P<value>.*)')
-        lines = self.source.splitlines()
-        for num, line in enumerate(lines):
-            match = META_RE.match(line)
-            if match:
-                key = match.group('key').strip().lower()
-                value = match.group('value').strip()
-                if value:
-                    # custom header transformation
-                    header_method = getattr(self, '_parse_%s_header' % key,
-                                            None)
-                    if header_method:
-                        value = header_method(value)
-                    self.headers[key] = value
-                    num_last_match = num
-            else:
-                break
-        # remove header lines from input source
-        try:
-            del lines[:num_last_match + 1]
-        except UnboundLocalError:
-            pass
-
-        # check if a blank line followed the header lines and remove it
-        try:
-            if not lines[0]:
-                del lines[0]
-        except IndexError:
-            pass
-        self.text = '\n'.join(lines)
-
-    def _parse_date_header(self, value):
-        """
-        Parses the date header string into a python datetime object.
-        """
-        try:
-            return parser.parse(value)
-        except ValueError as error:
-            raise ParserException(error)
-
-    def _parse_status_header(self, value):
-        """
-        Checks that the value of the 'status' header is 'live', 'hidden' or
-        'draft'. If not 'live' is returned.
-        """
-        if value in ('live', 'hidden', 'draft'):
-            return value
-        return 'live'
+        self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
+        if not 'status' in self.headers \
+           or self.headers['status'] not in ('live', 'hidden', 'draft'):
+            self.headers['status'] = 'live'
 
     def _parse_text(self):
         """
@@ -79,7 +31,23 @@ class Parser(object):
         """
         return self.text
 
+    def _split_input(self):
+        """
+        Segregates header from actual text.
+        Used to later parse these parts a different way.
+        """
+        parts = self.source.split("\n\n", 1)
+        if len(parts) < 2:
+            parts = self.source.split("---\n", 1)
+        if len(parts) >= 2:
+            self.header_raw = parts[0]
+            self.text = parts[-1]
+        else:
+            self.header_raw = ''
+            self.text = self.source
+
     def parse(self):
+        self._split_input()
         self._parse_headers()
         self._parse_text()
         return (self.headers, self.text)
