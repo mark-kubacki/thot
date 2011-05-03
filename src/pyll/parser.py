@@ -1,3 +1,4 @@
+import logging
 import yaml
 from os.path import splitext
 
@@ -9,11 +10,12 @@ class ParserException(Exception):
 class Parser(object):
     output_ext = None
 
-    def __init__(self, settings, source):
+    def __init__(self, settings, source, filename):
         self.settings = settings
         self.source = source
         self.headers = {}
         self.text = ''
+        self.filename = filename
 
     def _parse_headers(self):
         """
@@ -43,6 +45,7 @@ class Parser(object):
             self.header_raw = parts[0]
             self.text = parts[-1]
         else:
+            logging.warn("'%s' has no headers, only content - at least 'title' will be missing.", self.filename)
             self.header_raw = ''
             self.text = self.source
 
