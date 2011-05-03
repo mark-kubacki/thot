@@ -11,6 +11,7 @@ from os.path import splitext, join, dirname, split, abspath, getctime,\
 from shutil import rmtree
 import sys
 import time
+import pytz
 
 from pyll import __version__, parser, autoreload
 from pyll.url import get_url
@@ -100,10 +101,10 @@ class Site(object):
             slug = filename
         title = filename.title()
         try:
-            date = datetime.fromtimestamp(getctime(path))
+            date = pytz.utc.localize(datetime.utcfromtimestamp(getctime(path)))
         except OSError:
             # use the current date if the ctime cannot be accessed
-            date = datetime.now()
+            date = self.settings['build_time']
         return dict(path=relpath(path, self.settings['project_dir']),
                     title=title, date=date, status='live',
                     slug=slug, template='default.html', url='default',
@@ -111,6 +112,7 @@ class Site(object):
 
     def _parse(self, input_data):
         "Parses the input data"
+        now = self.settings['build_time']
         for input_dir in input_data:
             pages, static_files = input_data[input_dir]
 
@@ -146,11 +148,11 @@ class Site(object):
                     logging.debug('skipping %s (draft)', path)
                     continue
                 # skip pages with a date that is in the future
-                elif page['date'] > datetime.today():
+                elif page['date'] > now:
                     logging.debug('skipping %s (future-dated)', path)
                     continue
                 # skip expired pages; i.e. with a passed expiry set
-                elif 'expires' in page and page['expires'] < datetime.today():
+                elif 'expires' in page and page['expires'] < now:
                     logging.debug('skipping %s (expired)', path)
                     continue
                 
@@ -266,10 +268,16 @@ def quickstart(settings):
     author_email = raw_input("Author Email [%s]: " % author_email_default) or author_email_default
     website_url_default = 'http://www.example.org'
     website_url = raw_input("Website URL [%s]: " % website_url_default) or website_url_default
+    timezone = 'tbd'
+    while not timezone in pytz.all_timezones_set:
+        if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
+        timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
+                             + "'UTC' or something other: ")
     config = {'pyll': {
         'author_name': author_name,
         'author_email': author_email,
         'website_url': website_url,
+        'timezone': timezone,
     }}
 
     # before writing the settings file, make sure the _lib dir exists
@@ -310,7 +318,7 @@ def main():
                 'lib_dir': join(project_dir, '_lib'),
                 'url_path': join(project_dir, '_lib', 'urls.py'),
                 'settings_path': join(project_dir, '_lib', 'settings.cfg'),
-                'build_time': datetime.today()}
+                'build_time': pytz.utc.localize(datetime.utcnow())}
 
     # configure logging
     logging_level = LOGGING_LEVELS.get(options.logging, logging.INFO)
@@ -329,6 +337,17 @@ def main():
             config = yaml.safe_load(configfile.read())
         settings.update(config['pyll'])
     logging.debug('settings %s', settings)
+    # check and find the user's timezone
+    if not 'timezone' in settings:
+        settings['timezone'] = 'UTC'
+        logging.warn('No timezone has been set. Assuming all dates are in "%s".',
+                     settings['timezone'])
+    elif settings['timezone'] not in pytz.all_timezones_set:
+        logging.error('Timezone "%s" is unknown (not in pytz.all_timezones_set).'
+                      + ' Try "Europe/Berlin", "UTC" or "US/Pacific" for example.',
+                      settings['timezone'])
+        sys.exit(1)
+    settings['timezone'] = pytz.timezone(settings['timezone'])
 
     # initialize site
     site = Site(settings)

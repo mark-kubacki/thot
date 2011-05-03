@@ -1,5 +1,7 @@
 import logging
 import yaml
+import pytz
+from datetime import datetime, date, time
 from os.path import splitext
 
 
@@ -22,9 +24,43 @@ class Parser(object):
         Parses the headers from the source.
         """
         self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
-        if not 'status' in self.headers \
-           or self.headers['status'] not in ('live', 'hidden', 'draft'):
-            self.headers['status'] = 'live'
+        for key in self.headers:
+            value = self.headers[key]
+            if value:
+                # custom header transformation
+                header_method = getattr(self, '_parse_%s_header' % key,
+                                        None)
+                if header_method:
+                    self.headers[key] = header_method(value)
+
+    def _parse_date_header(self, value):
+        """
+        Applies the user's timezone.
+        """
+        # if the date is localized - do nothing
+        if hasattr(value, 'tzname') and value.tzname():
+            return value
+        if type(value) == date:
+            value = datetime.combine(value, time(0, 0))
+        user_tz = self.settings['timezone']
+        # if the user specified a different timezone, use that
+        if 'timezone' in self.headers:
+            if self.headers['timezone'] in pytz.all_timezones_set:
+                user_tz = pytz.timezone[self.headers['timezone']]
+            else:
+                logging.warn('Timezone "%s" specified in "%s" is unknown, "%s" will be used instead',
+                             self.headers['timezone'], self.filename, user_tz)
+        return user_tz.localize(value)
+    _parse_expires_header = _parse_date_header
+
+    def _parse_status_header(self, value):
+        """
+        Checks that the value of the 'status' header is 'live', 'hidden' or
+        'draft'. If not 'live' is returned.
+        """
+        if value in ('live', 'hidden', 'draft'):
+            return value
+        return 'live'
 
     def _parse_text(self):
         """
