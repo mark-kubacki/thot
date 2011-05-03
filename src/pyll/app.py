@@ -234,7 +234,7 @@ class Site(object):
             dst = join(self.settings['output_dir'],
                        relpath(static_file, self.settings['project_dir']))
             logging.debug('copying %s to %s', static_file, dst)
-            copy_file(static_file, dst)
+            copy_file(static_file, dst, self.settings['hardlinks'])
 
         # static files that are associated with pages
         for page in self.pages:
@@ -243,7 +243,7 @@ class Site(object):
                            dirname(_get_output_path(page['url'])),
                            relpath(static_file, dirname(page['path'])))
                 logging.debug('copying %s to %s', static_file, dst)
-                copy_file(static_file, dst)
+                copy_file(static_file, dst, self.settings['hardlinks'])
 
     def run(self):
         start_time = time.time()
@@ -305,6 +305,9 @@ def main():
                       help="sets the logging level. 'info' (default) or 'debug'")
     parser.add_option('--server', help='start a local webserver',
                       action="store_true", dest="server")
+    parser.add_option('--hardlinks', action="store_true",
+                      help="instead of copying static files, creates hardlinks" \
+                           + " - which is faster and saves space")
     options, args = parser.parse_args()
 
     try:
@@ -318,6 +321,7 @@ def main():
                 'lib_dir': join(project_dir, '_lib'),
                 'url_path': join(project_dir, '_lib', 'urls.py'),
                 'settings_path': join(project_dir, '_lib', 'settings.cfg'),
+                'hardlinks': options.hardlinks,
                 'build_time': pytz.utc.localize(datetime.utcnow())}
 
     # configure logging
@@ -372,6 +376,8 @@ def main():
             settings['lib_dir'])})
     else:
         site.run()
+        if options.hardlinks:
+            print "Keep in mind: Output directory contains hardlinks."
 
 if __name__ == '__main__':
     main()

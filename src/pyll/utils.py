@@ -11,6 +11,14 @@ try:
 except:
     has_murmur = False
 
+# monkeypatching for hardlinks; suggested by Dieter Deyke '2006
+if os.name == 'nt':
+    import ctypes
+    def CreateHardLinkWin(src, dst):
+        if not ctypes.windll.kernel32.CreateHardLinkA(dst, src, 0):
+            raise OSError
+    os.link = CreateHardLinkWin
+
 
 def walk_ignore(path):
     "Custom walker that ignores specific filenames"
@@ -30,7 +38,18 @@ def get_hash_from_path(path, algorithm='sha1'):
     m.update(content)
     return m.hexdigest()
 
-def copy_file(src, dst):
+def equivalent_files(src, dst):
+    "True if `src` and `dst` are the equivalent."
+    # Same inode on same device <=> thus identical?
+    src_stat, dst_stat = os.stat(src), os.stat(dst)
+    if src_stat.dev == dst_stat.dev and src_stat.st_ino == dst_stat.st_ino:
+        return True
+    # Else, same file content?
+    else:
+        file_hash = murmur.file_hash if has_murmur else get_hash_from_path
+        return file_hash(src) == file_hash(dst)
+
+def copy_file(src, dst, hardlinks=False):
     """
     Copy `src` to `dst`.
 
@@ -39,6 +58,9 @@ def copy_file(src, dst):
     To increase performance, this function will check if the file `dst`
     exists and compare the hash of `src` and `dst`. The file will
     only be copied if the hashes differ.
+
+    If `hardlinks` is true, instead of copying hardlinks will be created
+    if possible.
     """
     try:
         os.makedirs(os.path.dirname(dst))
@@ -46,11 +68,18 @@ def copy_file(src, dst):
         pass
 
     if os.path.isfile(dst):
-        file_hash = murmur.file_hash if has_murmur else get_hash_from_path
-        if file_hash(src) == file_hash(dst):
+        if equivalent_files(src, dst):
             return
     try:
-        shutil.copy(src, dst)
+        if hardlinks:
+            try:
+                os.link(src, dst)
+            except OSError:
+                logging.debug("Could not create hardlink for '%s'->'%s'.",
+                              src, dst)
+                shutil.copy(src, dst)
+        else:
+            shutil.copy(src, dst)
     except IOError:
         pass
 
