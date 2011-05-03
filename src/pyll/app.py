@@ -149,6 +149,10 @@ class Site(object):
                 elif page['date'] > datetime.today():
                     logging.debug('skipping %s (future-dated)', path)
                     continue
+                # skip expired pages; i.e. with a passed expiry set
+                elif 'expires' in page and page['expires'] < datetime.today():
+                    logging.debug('skipping %s (expired)', path)
+                    continue
                 
                 # update the url
                 page['url'] = get_url(page)
