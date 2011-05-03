@@ -9,6 +9,22 @@ class ParserException(Exception):
     """Exception raised for errors during the parsing."""
     pass
 
+# a mapping of file extensions to the corresponding parser class
+parser_map = dict()
+
+def parses(*extensions):
+    "Decorator to Parsers, registers them for input files of given file name extensions."
+    def add_to_map(_parser):
+        for ext in extensions:
+            if ext in parser_map:
+                logging.info('Extension "%s" is already registered with parser "%s" and will be redefined.',
+                             ext, parser_map[ext])
+            parser_map[ext] = _parser
+        return _parser
+    return add_to_map
+
+
+@parses('html', 'htm', 'xml', 'txt')
 class Parser(object):
     output_ext = None
 
@@ -92,6 +108,7 @@ class Parser(object):
         return (self.headers, self.text)
 
 
+@parses('rst')
 class RstParser(Parser):
     """ReStructuredText Parser"""
     output_ext = 'html'
@@ -144,6 +161,7 @@ class RstParser(Parser):
                                       writer_name='html4css1')['fragment']
 
 
+@parses('md', 'markdown')
 class MarkdownParser(Parser):
     """Markdown Parser"""
     output_ext = 'html'
@@ -159,20 +177,12 @@ class MarkdownParser(Parser):
                                           ['codehilite(css_class=highlight)'])
 
 
-# a mapping of file extensions to the corresponding parser class
-parser_map = (
-    (('html', 'htm', 'xml', 'txt'), Parser),
-    (('rst',), RstParser),
-    (('md', 'markdown'), MarkdownParser),
-)
-
-
 def get_parser_for_filename(filename):
     """
     Factory function returning a parser class based on the file extension.
     """
     ext = splitext(filename)[1][1:]
     try:
-        return [pair[1] for pair in parser_map if ext in pair[0]][0]
-    except IndexError:
+        return parser_map[ext]
+    except KeyError:
         return
