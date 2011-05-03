@@ -5,6 +5,13 @@ import os
 import shutil
 import hashlib
 
+try:
+    import murmur
+    has_murmur = True
+except:
+    has_murmur = False
+
+
 def walk_ignore(path):
     "Custom walker that ignores specific filenames"
     ignores = ('.*', '*~', '#*', '_*',)
@@ -39,9 +46,8 @@ def copy_file(src, dst):
         pass
 
     if os.path.isfile(dst):
-        src_hash = get_hash_from_path(src)
-        dst_hash = get_hash_from_path(dst)
-        if src_hash == dst_hash:
+        file_hash = murmur.file_hash if has_murmur else get_hash_from_path
+        if file_hash(src) == file_hash(dst):
             return
     try:
         shutil.copy(src, dst)
