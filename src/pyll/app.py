@@ -7,8 +7,8 @@ import yaml
 from optparse import OptionParser
 from os import makedirs, getcwd, getlogin
 from os.path import splitext, join, dirname, split, abspath, getctime,\
-                    basename, exists, relpath, isabs
-from shutil import rmtree
+                    basename, exists, relpath, isabs, normpath
+from shutil import rmtree, copytree
 import sys
 import time
 import pytz
@@ -280,19 +280,16 @@ def quickstart(settings):
         'timezone': timezone,
     }}
 
+    # copy quickstart template
+    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart'))
+    copytree(tmpl_path, settings['project_dir'])
+
     # before writing the settings file, make sure the _lib dir exists
     if not exists(settings['lib_dir']):
         makedirs(settings['lib_dir'])
     
     with open(settings['settings_path'], 'wb', encoding='utf-8') as configfile:
         configfile.write(yaml.dump(config, default_flow_style=False))
-    
-    # extract template
-    tmpl_path = join(dirname(abspath(__file__)), 'quickstart.tar.gz')
-    import tarfile
-    tar = tarfile.open(tmpl_path)
-    tar.extractall(path=settings['project_dir'])
-    tar.close()
 
     return config['pyll']
 
@@ -333,6 +330,7 @@ def main():
     # quickstart
     if options.quickstart:
         quickstart(settings)
+        settings['build_time'] = pytz.utc.localize(datetime.utcnow())
         print '\nYour website will be available at %s' % settings['output_dir']
 
     # read settings file

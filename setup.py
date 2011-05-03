@@ -1,9 +1,17 @@
 from imp import load_source
+from os import walk
 from os.path import join, dirname, abspath
 from setuptools import setup, find_packages
 
 pyll_mod = load_source('pyll', join(dirname(abspath(__file__)),
                                     'src', 'pyll', '__init__.py'))
+
+def find_data_files(path, prefix):
+    lst = []
+    for dirpath, dirnames, filenames in walk(path):
+        lst.append((prefix + dirpath.replace(path, ''),
+                    [dirpath+'/'+f for f in filenames]))
+    return lst
 
 setup(
     name = 'pyll',
@@ -17,8 +25,9 @@ setup(
     package_dir = {'': 'src'},
     package_data={
         'pyll': ['templates/default.html',
-                 'quickstart.tar.gz'],
+                 ],
     },
+    data_files = find_data_files('src/quickstart', 'quickstart'),
     zip_safe = False,
 
     test_suite = 'nose.collector',

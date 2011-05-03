@@ -1,0 +1,13 @@
+status: hidden
+template: self
+
+{% extends "default.html" %}
+
+{% block content %}
+  <h1>Blog Posts</h1>
+  <ul class="posts">
+    {% for page in pages %}
+        <li><span>{{ page.date|datetimeformat("%d %b %Y") }}</span> &raquo; <a href="{{ page.url }}">{{ page.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -1,0 +1,25 @@
+status: hidden
+template: self
+
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>{{ settings.author_name }}</title>
+    <link href="{{ settings.website_url }}/atom.xml" rel="self" />
+    <link href="{{ settings.website_url }}" />
+    <updated>{{ settings.build_time|datetimeformat("%Y-%m-%dT%H:%M:%SZ") }}</updated>
+    <id>{{ settings.website_url }}</id>
+    <author>
+        <name>{{ settings.author_name }}</name>
+        <email>{{ settings.author_email }}</email>
+    </author>
+
+    {% for page in pages %}
+    <entry>
+        <title>{{ page.title }}</title>
+        <link href="{{ settings.website_url }}/{{ page.url }}" />
+        <updated>{{ page.date|datetimeformat("%Y-%m-%dT%H:%M:%SZ") }}</updated>
+        <id>{{ settings.website_url }}/{{ page.url }}</id>
+        <content type="html">{{ page.content|e }}</content>
+     </entry>
+ {% endfor %}
+</feed>
