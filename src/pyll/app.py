@@ -281,7 +281,7 @@ def quickstart(settings):
     }}
 
     # copy quickstart template
-    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart'))
+    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', 'jinja2'))
     copytree(tmpl_path, settings['project_dir'])
 
     # before writing the settings file, make sure the _lib dir exists
