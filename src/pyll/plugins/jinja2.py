@@ -1,0 +1,38 @@
+from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PackageLoader
+from jinja2 import TemplateNotFound
+
+from pyll.utils import datetimeformat, ordinal_suffix
+from pyll.template import TemplateException, register_templating_engine
+
+
+@register_templating_engine('jinja2')
+class Jinja2Template(object):
+    default_template = 'default.html'
+
+    def __init__(self, settings):
+        self.settings = settings
+        self.env = Environment(loader=ChoiceLoader([
+            FileSystemLoader(self.settings['template_dir']),
+            PackageLoader('pyll')]))
+        self.env.filters['datetimeformat'] = datetimeformat
+        self.env.filters['ordinalsuffix'] = ordinal_suffix
+
+    def render_string(self, template_str, **kwargs):
+        """Use `template_str` as a template"""
+        template = self.env.from_string(template_str)
+        try:
+            return template.render(**kwargs)
+        except TemplateNotFound as err:
+            raise TemplateException("Template '%s' not found" % err)
+
+    def render_file(self, template_name, **kwargs):
+        """Use `template_name` as a template"""
+        try:
+            template = self.env.get_template(template_name)
+        except TemplateNotFound:
+            raise TemplateException
+        try:
+            return template.render(**kwargs)
+        except TemplateNotFound as err:
+            raise TemplateException("Template '%s' not found" % err)
+

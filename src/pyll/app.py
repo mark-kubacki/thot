@@ -3,9 +3,10 @@ from codecs import open
 from datetime import datetime
 import imp
 import logging
+import warnings
 import yaml
 from optparse import OptionParser
-from os import makedirs, getcwd, getlogin
+from os import makedirs, getcwd, getlogin, listdir, sep as dirsep
 from os.path import splitext, join, dirname, split, abspath, getctime,\
                     basename, exists, relpath, isabs, normpath
 from shutil import rmtree, copytree
@@ -17,7 +18,7 @@ from pyll import __version__, parser, autoreload
 from pyll.url import get_url
 from pyll.utils import copy_file, walk_ignore, OrderedDict
 from pyll.server import LanyonHTTPRequestHandler
-from pyll.template import MakoTemplate, TemplateException
+from pyll.template import TemplateException, get_templating_cls
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
 
@@ -105,9 +106,11 @@ class Site(object):
         except OSError:
             # use the current date if the ctime cannot be accessed
             date = self.settings['build_time']
+        template = self.settings['default_template'] if 'default_template' in self.settings \
+                   else get_templating_cls(self.settings['templating_engine']).default_template
         return dict(path=relpath(path, self.settings['project_dir']),
                     title=title, date=date, status='live',
-                    slug=slug, template='default.html', url='default',
+                    slug=slug, template=template, url='default',
                     output_ext=output_ext)
 
     def _parse(self, input_data):
@@ -194,8 +197,8 @@ class Site(object):
     def _write(self):
         "Writes the parsed data to the filesystem"
         public_pages = filter(self._is_public, self.pages)
-#        template_cls = Jinja2Template(self.settings)
-        template_cls = MakoTemplate(self.settings)
+        templating_engine = get_templating_cls(self.settings['templating_engine'])
+        template_cls = templating_engine(self.settings)
         for page in self.pages:
             output_path = self._get_output_path(page['url'])
 
@@ -205,7 +208,7 @@ class Site(object):
             except OSError:
                 pass
 
-            # render template with Jinja2
+            # render template
             if page['template'] == 'self':
                 render_func = template_cls.render_string
                 template = page['content']
@@ -280,10 +283,11 @@ def quickstart(settings):
         'author_email': author_email,
         'website_url': website_url,
         'timezone': timezone,
+        'templating_engine': settings['templating_engine'],
     }}
 
     # copy quickstart template
-    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', 'mako'))
+    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', settings['templating_engine']))
     copytree(tmpl_path, settings['project_dir'])
 
     # before writing the settings file, make sure the _lib dir exists
@@ -294,6 +298,17 @@ def quickstart(settings):
         configfile.write(yaml.dump(config, default_flow_style=False))
 
     return config['pyll']
+
+def load_plugins_from(path):
+    # the following or glob.glob(path+'/*.py')
+    mods = [f for f in listdir(path) if f.endswith('.py')]
+    for mod in mods:
+        try:
+            imp.load_source('plugin%s' % mod, path+dirsep+mod)
+        except IOError as e:
+            logging.debug('couldn\'t load from "%s"->%s', path, mod)
+        except ImportError as e:
+            logging.debug('couldn\'t load from "%s"->%s due to %s', path, mod, e.message)
 
 def main():
     parser = OptionParser(version="%prog " + __version__)
@@ -307,6 +322,9 @@ def main():
     parser.add_option('--hardlinks', action="store_true",
                       help="instead of copying static files, creates hardlinks" \
                            + " - which is faster and saves space")
+    parser.add_option('-t', '--templating', default='jinja2',
+                      dest='templating_engine',
+                      help="templating engine (e.g. jinja2, mako) for output")
     options, args = parser.parse_args()
 
     try:
@@ -321,6 +339,7 @@ def main():
                 'url_path': join(project_dir, '_lib', 'urls.py'),
                 'settings_path': join(project_dir, '_lib', 'settings.cfg'),
                 'hardlinks': options.hardlinks,
+                'templating_engine': options.templating_engine,
                 'build_time': pytz.utc.localize(datetime.utcnow())}
 
     # configure logging
@@ -352,6 +371,11 @@ def main():
                       settings['timezone'])
         sys.exit(1)
     settings['timezone'] = pytz.timezone(settings['timezone'])
+
+    # read in all available plugins
+    warnings.filterwarnings("ignore", r"Parent module .* absolute import",
+                            RuntimeWarning)
+    load_plugins_from(normpath(join(dirname(abspath(__file__)), 'plugins')))
 
     # initialize site
     site = Site(settings)

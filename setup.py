@@ -13,6 +13,19 @@ def find_data_files(path, prefix):
                     [dirpath+'/'+f for f in filenames]))
     return lst
 
+def one_supported_templating_engine():
+    try:
+        import mako
+        return []
+    except ImportError:
+        pass
+    try:
+        import jinja2
+        return []
+    except ImportError:
+        pass
+    return ['Jinja2']
+
 setup(
     name = 'pyll',
     version = pyll_mod.__version__,
@@ -41,11 +54,9 @@ setup(
     install_requires = [
         'markdown',
         'docutils',
-        'Jinja2',
-        'Mako >= 0.2',
         'python-dateutil==1.5',
         'pytz',
         'PyYAML',
-    ],
+    ] + one_supported_templating_engine(),
 )
 
