@@ -209,7 +209,7 @@ class Site(object):
                 render_func = template_cls.render_string
                 template = page['content']
             else:
-                render_func = template_cls.render
+                render_func = template_cls.render_file
                 template = page['template']
 
             try:

@@ -46,7 +46,7 @@ class Jinja2Template(object):
         except TemplateNotFound as err:
             raise TemplateException("Template '%s' not found" % err)
 
-    def render(self, template_name, **kwargs):
+    def render_file(self, template_name, **kwargs):
         """Use `template_name` as a template"""
         try:
             template = self.env.get_template(template_name)
