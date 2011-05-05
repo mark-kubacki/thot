@@ -17,7 +17,7 @@ from pyll import __version__, parser, autoreload
 from pyll.url import get_url
 from pyll.utils import copy_file, walk_ignore, OrderedDict
 from pyll.server import LanyonHTTPRequestHandler
-from pyll.template import Jinja2Template, TemplateException
+from pyll.template import MakoTemplate, TemplateException
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
 
@@ -194,7 +194,8 @@ class Site(object):
     def _write(self):
         "Writes the parsed data to the filesystem"
         public_pages = filter(self._is_public, self.pages)
-        template_cls = Jinja2Template(self.settings)
+#        template_cls = Jinja2Template(self.settings)
+        template_cls = MakoTemplate(self.settings)
         for page in self.pages:
             output_path = self._get_output_path(page['url'])
 
@@ -213,6 +214,7 @@ class Site(object):
                 template = page['template']
 
             try:
+                logging.debug('About to render "%s".', output_path)
                 rendered = render_func(template,
                                        page=page,
                                        pages=public_pages,
@@ -281,7 +283,7 @@ def quickstart(settings):
     }}
 
     # copy quickstart template
-    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', 'jinja2'))
+    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', 'mako'))
     copytree(tmpl_path, settings['project_dir'])
 
     # before writing the settings file, make sure the _lib dir exists

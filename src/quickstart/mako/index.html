@@ -1,0 +1,11 @@
+status: hidden
+template: self
+
+<%inherit file="master.mak"/>
+
+  <h1>Blog Posts</h1>
+  <ul class="posts">
+    % for page in pages:
+        <li><span>${ page['date'] | n,datetimeformat("%d %b %Y") }</span> &raquo; <a href="${ page['url'] }">${ page['title'] }</a></li>
+    % endfor
+  </ul>

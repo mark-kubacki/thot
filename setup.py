@@ -42,6 +42,7 @@ setup(
         'markdown',
         'docutils',
         'Jinja2',
+        'Mako >= 0.2',
         'python-dateutil==1.5',
         'pytz',
         'PyYAML',
