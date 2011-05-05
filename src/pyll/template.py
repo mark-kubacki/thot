@@ -1,6 +1,8 @@
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PackageLoader
 from jinja2 import TemplateNotFound
 
+from utils import datetimeformat, ordinal_suffix
+
 class TemplateException(Exception):
     pass
 
@@ -12,31 +14,8 @@ class Jinja2Template(object):
         self.env = Environment(loader=ChoiceLoader([
             FileSystemLoader(self.settings['template_dir']),
             PackageLoader('pyll')]))
-        self.env.filters['datetimeformat'] = self.datetimeformat
-        self.env.filters['ordinalsuffix'] = self.ordinal_suffix
-
-    def ordinal_suffix(self, day):
-        """
-        Return the day with the ordinal suffix appended.
-
-        Example: 1st, 2nd, 3rd, 4th, ...
-        """
-        day = int(day)
-        if 4 <= day <= 20 or 24 <= day <= 30:
-            suffix = "th"
-        else:
-            suffix = ["st", "nd", "rd"][day % 10 - 1]
-        return "%s%s" % (day, suffix)
-
-    def datetimeformat(self, value, format='%H:%M / %d-%m-%Y'):
-        """
-        Return a formatted time string.
-
-        Keyword arguments:
-        value -- tuple or struct_time representing a time
-        format -- the desired format
-        """
-        return value.strftime(format)
+        self.env.filters['datetimeformat'] = datetimeformat
+        self.env.filters['ordinalsuffix'] = ordinal_suffix
 
     def render_string(self, template_str, **kwargs):
         """Use `template_str` as a template"""

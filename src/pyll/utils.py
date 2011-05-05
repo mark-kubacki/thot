@@ -11,6 +11,29 @@ try:
 except:
     has_murmur = False
 
+def ordinal_suffix(day):
+    """
+    Return the day with the ordinal suffix appended.
+
+    Example: 1st, 2nd, 3rd, 4th, ...
+    """
+    day = int(day)
+    if 4 <= day <= 20 or 24 <= day <= 30:
+        suffix = "th"
+    else:
+        suffix = ["st", "nd", "rd"][day % 10 - 1]
+    return "%s%s" % (day, suffix)
+
+def datetimeformat(value, format='%H:%M / %d-%m-%Y'):
+    """
+    Return a formatted time string.
+
+    Keyword arguments:
+    value -- tuple or struct_time representing a time
+    format -- the desired format
+    """
+    return value.strftime(format)
+
 # monkeypatching for hardlinks; suggested by Dieter Deyke '2006
 if os.name == 'nt':
     import ctypes
