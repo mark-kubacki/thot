@@ -2,6 +2,9 @@ import markdown
 
 from pyll.parser import Parser, parses
 
+__all__ = [
+    'MarkdownParser',
+]
 
 @parses('md', 'markdown')
 class MarkdownParser(Parser):

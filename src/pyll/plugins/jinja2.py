@@ -4,6 +4,9 @@ from jinja2 import TemplateNotFound
 from pyll.utils import datetimeformat, ordinal_suffix
 from pyll.template import TemplateException, register_templating_engine
 
+__all__ = [
+    'Jinja2Template',
+]
 
 @register_templating_engine('jinja2')
 class Jinja2Template(object):

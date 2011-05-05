@@ -13,6 +13,9 @@ except:
 
 from pyll.parser import Parser, parses
 
+__all__ = [
+    'RstParser',
+]
 
 @parses('rst')
 class RstParser(Parser):

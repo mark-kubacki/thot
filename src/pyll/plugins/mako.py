@@ -1,10 +1,13 @@
-from mako.template import Template as MakoSingleTemplate
-from mako.lookup import TemplateLookup as MakoTemplateLookup
+from mako.template import Template
+from mako.lookup import TemplateLookup
 from mako.exceptions import TopLevelLookupException, text_error_template
 
 from pyll.utils import datetimeformat, ordinal_suffix
 from pyll.template import TemplateException, register_templating_engine
 
+__all__ = [
+    'MakoTemplate',
+]
 
 @register_templating_engine('mako')
 class MakoTemplate(object):
@@ -12,7 +15,7 @@ class MakoTemplate(object):
 
     def __init__(self, settings):
         self.settings = settings
-        self.template_lookup = MakoTemplateLookup(
+        self.template_lookup = TemplateLookup(
                 directories=settings['template_dir'].split(','),
                 module_directory=settings['tmp_directory'] \
                                  if 'tmp_directory' in settings else None,
@@ -41,7 +44,7 @@ class MakoTemplate(object):
             raise e
 
     def render_string(self, template_str, **kwargs):
-        template =  MakoSingleTemplate(
+        template =  Template(
             template_str,
             lookup = self.template_lookup)
         return self._render(template, **kwargs)
