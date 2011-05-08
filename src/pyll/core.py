@@ -9,6 +9,8 @@ from shutil import rmtree, copytree
 import sys
 import time
 import pytz
+import pkg_resources
+import weakref
 
 from pyll import parser
 from pyll.url import get_url
@@ -80,6 +82,34 @@ class Site(object):
                           self.settings['url_path'], e)
         self.data_source.set_urlfunc(get_url)
 
+        # maps list of Processors to steps
+        self.processor_map = {}
+        self._init_processors()
+
+    def _init_processors(self):
+        """
+        Loads and initalizes all available processors.
+        """
+        for entrypoint in pkg_resources.iter_entry_points('pyll.processors'):
+            try:
+                cls = entrypoint.load()
+                cls_instance = cls(weakref.ref(self), self.settings)
+                for step in cls.run_at:
+                    if step in self.processor_map:
+                        self.processor_map[step].append(cls_instance)
+                    else:
+                        self.processor_map[step] = [cls_instance, ]
+            except Exception, e:
+                logging.debug('Processor "%s" has not been loaded due to: %s',
+                              entrypoint, e)
+
+    def processors_for(self, step):
+        "Gets a list of processors for the given step."
+        if step in self.processor_map:
+            return self.processor_map[step]
+        else:
+            return []
+
     def _parse(self, input_data):
         "Parses the input data"
         now = self.settings['build_time']
@@ -112,9 +142,16 @@ class Site(object):
                     logging.debug('skipping %s (expired)', page)
                     continue
 
+                # for example, collect tags and categories
+                for proc in self.processors_for('after_page_parsed'):
+                    proc.after_page_parsed(page)
+
                 self.pages.append(page)
                 sys.stdout.write('.')
         sys.stdout.write('\n')
+
+        for proc in self.processors_for('after_parsing'):
+            proc.after_parsing(self.pages)
 
     def _sort(self):
         "Sort pages by date (newest first)"
@@ -164,10 +201,12 @@ class Site(object):
 
             try:
                 logging.debug('About to render "%s".', output_path)
+                params = page['params'] if 'params' in page else {}
                 rendered = render_func(template,
                                        page=page,
                                        pages=public_pages,
-                                       settings=self.settings)
+                                       settings=self.settings,
+                                       **params)
             except TemplateException as error:
                 logging.error(error)
                 logging.error('skipping article "%s"', page['path'])

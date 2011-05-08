@@ -61,6 +61,10 @@ setup(
             'rst = pyll.plugins.RstParser:RstParser',
             'creole = pyll.plugins.CreoleParser:CreoleParser',
             'trac = pyll.plugins.TracParser:TracParser',
+        ],
+        'pyll.processors': [
+            'tags = pyll.plugins.Tagging:PageTags',
+            'category = pyll.plugins.Tagging:PageCategory',
         ]
     },
     install_requires = [

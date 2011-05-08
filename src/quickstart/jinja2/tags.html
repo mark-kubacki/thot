@@ -1,0 +1,20 @@
+status: hidden
+title: MySite &raquo; %(field_value)s
+index: [tags, category]
+template: self
+
+{% extends "default.html" %}
+
+{% block content %}
+  {% if field == "tags" %}
+    <h1>Index for the tag <q>{{ field_value }}</q></h1>
+  {% else %}
+    <h1>Index for the <q>{{ field_value }}</q> {{ field }}</h1>
+  {% endif %}
+
+  <ul class="posts">
+    {% for page in collection %}
+        <li><span>{{ page.date|datetimeformat("%d %b %Y") }}</span> &raquo; <a href="{{ page.url }}">{{ page.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}
