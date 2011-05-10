@@ -45,10 +45,22 @@ setup(
 
     test_suite = 'nose.collector',
 
-    # install the pyll executable
     entry_points = {
+        # install the pyll executable
         'console_scripts': [
             'pyll = pyll.app:main'
+        ],
+        # now come the shipped plugins
+        'pyll.templating_engines': [
+            'mako = pyll.plugins.MakoTemplating:MakoTemplate',
+            'jinja2 = pyll.plugins.Jinja2Templating:Jinja2Template',
+        ],
+        'pyll.renderer': [
+            'trivial = pyll.parser:Parser',
+            'markdown = pyll.plugins.MarkdownParser:MarkdownParser',
+            'rst = pyll.plugins.RstParser:RstParser',
+            'creole = pyll.plugins.CreoleParser:CreoleParser',
+            'trac = pyll.plugins.TracParser:TracParser',
         ]
     },
     install_requires = [

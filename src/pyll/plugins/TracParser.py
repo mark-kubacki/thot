@@ -7,13 +7,12 @@ from trac.wiki.formatter import HtmlFormatter
 # importing from trac.wiki.macros registers all macros contained in that module
 from trac.wiki.macros import WikiMacroBase
 
-from pyll.parser import Parser, parses
+from pyll.parser import Parser
 
 __all__ = [
     'TracParser',
 ]
 
-@parses('trac')
 class TracParser(Parser):
     """
     Parser of Trac wiki pages into HTML.
@@ -22,6 +21,7 @@ class TracParser(Parser):
     of macros.
     """
     output_ext = 'html'
+    parses = ['trac']
 
     def create_trac_ctx(self, website_url, author_name, timezone_str, uri):
         req = Mock(href=Href(uri),

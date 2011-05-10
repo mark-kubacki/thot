@@ -1,15 +1,15 @@
 from creole import creole2html
 
-from pyll.parser import Parser, parses
+from pyll.parser import Parser
 
 __all__ = [
     'CreoleParser',
 ]
 
-@parses('creole', 'cre')
 class CreoleParser(Parser):
     "Creole to HTML parser."
     output_ext = 'html'
+    parses = ['creole', 'cre']
 
     def _parse_text(self):
         self.text = creole2html(self.text)

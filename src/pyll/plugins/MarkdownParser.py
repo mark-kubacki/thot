@@ -1,15 +1,15 @@
 import markdown
 
-from pyll.parser import Parser, parses
+from pyll.parser import Parser
 
 __all__ = [
     'MarkdownParser',
 ]
 
-@parses('md', 'markdown')
 class MarkdownParser(Parser):
     """Markdown Parser"""
     output_ext = 'html'
+    parses = ['md', 'markdown']
 
     def _parse_text(self):
         self.text = markdown.markdown(self.text,

@@ -3,13 +3,12 @@ from mako.lookup import TemplateLookup
 from mako.exceptions import TopLevelLookupException, text_error_template
 
 from pyll.utils import datetimeformat, ordinal_suffix
-from pyll.template import TemplateException, register_templating_engine
+from pyll.template import TemplateException
 
 __all__ = [
     'MakoTemplate',
 ]
 
-@register_templating_engine('mako')
 class MakoTemplate(object):
     default_template = 'default.mak'
 

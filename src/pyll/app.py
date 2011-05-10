@@ -1,12 +1,10 @@
 import BaseHTTPServer
 from codecs import open
 from datetime import datetime
-import imp
 import logging
-import warnings
 import yaml
 from optparse import OptionParser
-from os import makedirs, getcwd, getlogin, listdir, sep as dirsep
+from os import makedirs, getcwd, getlogin
 from os.path import join, dirname, abspath, \
                     exists, normpath
 from shutil import copytree
@@ -53,16 +51,6 @@ def quickstart(settings):
 
     return config['pyll']
 
-def load_plugins_from(path):
-    # the following or glob.glob(path+'/*.py')
-    mods = [f for f in listdir(path) if f.endswith('.py')]
-    for mod in mods:
-        try:
-            imp.load_source('plugin%s' % mod, path+dirsep+mod)
-        except IOError as e:
-            logging.debug('couldn\'t load from "%s"->%s', path, mod)
-        except ImportError as e:
-            logging.debug('couldn\'t load from "%s"->%s due to %s', path, mod, e.message)
 
 def main():
     parser = OptionParser(version="%prog " + __version__)
@@ -125,11 +113,6 @@ def main():
                       settings['timezone'])
         sys.exit(1)
     settings['timezone'] = pytz.timezone(settings['timezone'])
-
-    # read in all available plugins
-    warnings.filterwarnings("ignore", r"Parent module .* absolute import",
-                            RuntimeWarning)
-    load_plugins_from(normpath(join(dirname(abspath(__file__)), 'plugins')))
 
     # initialize site
     site = Site(settings)

@@ -11,16 +11,16 @@ try:
 except:
     has_pygments = False
 
-from pyll.parser import Parser, parses
+from pyll.parser import Parser
 
 __all__ = [
     'RstParser',
 ]
 
-@parses('rst')
 class RstParser(Parser):
     """ReStructuredText Parser"""
     output_ext = 'html'
+    parses = ['rst']
 
     def pygments_directive(self, name, arguments, options, content, lineno,
                            content_offset, block_text, state, state_machine):

@@ -3,7 +3,11 @@ import yaml
 import pytz
 from datetime import datetime, date, time
 from os.path import splitext
+import pkg_resources
 
+__all__ = [
+    'ParserException', 'Parser', 'get_parser_for_filename',
+]
 
 class ParserException(Exception):
     """Exception raised for errors during the parsing."""
@@ -12,21 +16,10 @@ class ParserException(Exception):
 # a mapping of file extensions to the corresponding parser class
 parser_map = dict()
 
-def parses(*extensions):
-    "Decorator to Parsers, registers them for input files of given file name extensions."
-    def add_to_map(_parser):
-        for ext in extensions:
-            if ext in parser_map:
-                logging.info('Extension "%s" is already registered with parser "%s" and will be redefined.',
-                             ext, parser_map[ext])
-            parser_map[ext] = _parser
-        return _parser
-    return add_to_map
 
-
-@parses('html', 'htm', 'xml', 'txt')
 class Parser(object):
     output_ext = None
+    parses = ['html', 'htm', 'xml', 'txt']
 
     def __init__(self, settings, source, filename):
         self.settings = settings
@@ -112,6 +105,16 @@ def get_parser_for_filename(filename):
     """
     Factory function returning a parser class based on the file extension.
     """
+    if len(parser_map) <= 0:
+        for entrypoint in pkg_resources.iter_entry_points('pyll.renderer'):
+            try:
+                cls = entrypoint.load()
+                for e in cls.parses:
+                    parser_map[e] = cls
+            except Exception, e:
+                logging.debug('Parser "%s" has not been loaded due to: %s',
+                              entrypoint, e)
+
     ext = splitext(filename)[1][1:]
     try:
         return parser_map[ext]
