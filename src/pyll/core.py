@@ -15,9 +15,60 @@ from pyll.url import get_url
 from pyll.utils import copy_file, walk_ignore, OrderedDict
 from pyll.template import TemplateException, get_templating_cls
 
+class Page(dict):
+
+    def __init__(self, db, get_url, **kwargs):
+        super(Page, self).__init__(self, **kwargs)
+        self.db = db
+        self.get_url = get_url
+        self.parser_cls = None
+
+    @property
+    def is_public(self):
+        "Return True if page is public"
+        return self['status'] != 'hidden'
+
+    @property
+    def is_parsed(self):
+        return 'content' in self
+
+    def get_parser_class(self):
+        if not self.parser_cls:
+            self.parser_cls = parser.get_parser_for_filename(self['path'])
+        return self.parser_cls
+
+    def parse(self, site_settings): # throws parser.ParserException
+        raw = self.db.read(self['path'])
+        parser_cls = self.get_parser_class()
+        parser_inst = parser_cls(site_settings, raw, self['path'])
+        parsed = parser_inst.parse()
+
+        # update the values in the page dict
+        self.update(content=parsed[1], **parsed[0])
+        if parser_cls.output_ext:
+            self.update(output_ext=parser_cls.output_ext)
+
+        # update the url
+        self['url'] = self.get_url(self)
+
+    def copy(self):
+        clone = Page(self.db, self.get_url, **dict(self))
+        return clone
+
+    def __str__(self):
+        if 'url' in self:
+            return "Page(path=%s, url=%s)" % (self['path'] if 'path' in self else 'undefined', self['url'])
+        else:
+            return "Page(path=%s)" % (self['path'] if 'path' in self else 'undefined')
+
+    def __repr__(self):
+        return str(self)
+
+
 class Site(object):
-    def __init__(self, settings):
+    def __init__(self, settings, data_source):
         self.settings = settings
+        self.data_source = data_source
         self.pages = []
         self.static_files = []
 
@@ -27,84 +78,7 @@ class Site(object):
         except IOError as e:
             logging.debug('couldn\'t load urls from "%s": %s',
                           self.settings['url_path'], e)
-
-    def _read_files(self):
-        """
-        Walks through the project directory and separates files into 
-        parseable files (file extensions for which a parser exists)
-        and static files (file extensions for which no parser exists)
-        """
-        data = OrderedDict()
-        for root, dirs, files in walk_ignore(self.settings['project_dir']):
-            pages = [] # parseable files; rename to (pages)
-            static = [] # rename to (static)
-
-            # check if a parser exists and append to corresponding list
-            for file in files:
-                path = join(root, file)
-                if parser.get_parser_for_filename(path):
-                    pages.append(path)
-                else:
-                    static.append(path)
-
-            # assign static files with pages
-            if pages:
-                data[root] = (pages, static)
-            elif static:
-                # dir has static file(s) but no pages. check if one of
-                # the parent dirs has a page and associate the static files
-                # with it
-                has_parent = False
-                if root != self.settings['project_dir']:
-                    parent_dir = dirname(root)
-                    while parent_dir != self.settings['project_dir']:
-                        if parent_dir in data:
-                            data.setdefault(parent_dir, ([], []))[1].\
-                                    extend(static)
-                            has_parent = True
-                        parent_dir = dirname(parent_dir)
-                # if no parent dir could be found, or the file is in the
-                # root dir associate the files with the root of the project dir
-                if not has_parent:
-                    data.setdefault(self.settings['project_dir'],
-                                    ([], []))[1].extend(static)
-        return data
-
-    def _get_default_headers(self, path):
-        """
-        Returns a dict with the default headers for `path`.
-
-        `path` - the relative path from the project dir to the file
-        `title` - titleized version of the filename
-        `date` - set to ctime. On unix this is the time of the most recent
-                 metadata change; on windows the creation time. If ctime
-                 cannot be accessed (due to permissions), the current 
-                 time is used.
-        `status` - set to 'live'
-        `template` - set to 'default.html'
-        `url` - set to "default" rule
-        `slug` - filename or, if the filename is "index", the dirname
-               of the parent directory unless its the top level dir.
-        `output_ext` - the extension of the parsed file
-        """
-        output_ext = splitext(path)[1][1:]
-        root, filename = split(splitext(path)[0])
-        if filename == 'index' and root != self.settings['project_dir']:
-            slug = basename(root)
-        else:
-            slug = filename
-        title = filename.title()
-        try:
-            date = pytz.utc.localize(datetime.utcfromtimestamp(getctime(path)))
-        except OSError:
-            # use the current date if the ctime cannot be accessed
-            date = self.settings['build_time']
-        template = self.settings['default_template'] if 'default_template' in self.settings \
-                   else get_templating_cls(self.settings['templating_engine']).default_template
-        return dict(path=relpath(path, self.settings['project_dir']),
-                    title=title, date=date, status='live',
-                    slug=slug, template=template, url='default',
-                    output_ext=output_ext)
+        self.data_source.set_urlfunc(get_url)
 
     def _parse(self, input_data):
         "Parses the input data"
@@ -116,44 +90,27 @@ class Site(object):
             # are not associated with any pages
             if input_dir == self.settings['project_dir']:
                 self.static_files = static_files
-                static_files = []
 
-            for path in pages:
-                page = dict(static_files=static_files)
-                page.update(self._get_default_headers(path))
-
-                # parse the page
-                parser_cls = parser.get_parser_for_filename(page['path'])
-                with open(path, 'r', encoding='utf-8') as f:
-                    parser_inst = parser_cls(self.settings, f.read(), page['path'])
-
+            for page in pages:
                 try:
-                    parsed = parser_inst.parse()
+                    page.parse(self.settings)
                 except parser.ParserException as parser_error:
                     logging.error(parser_error)
-                    logging.error('skipping article "%s"', path)
+                    logging.error('skipping article "%s"', page)
                     continue
-
-                # update the values in the page dict
-                page.update(content=parsed[1], **parsed[0])
-                if parser_cls.output_ext:
-                    page.update(output_ext=parser_cls.output_ext)
 
                 # skip drafts
                 if page['status'] == 'draft':
-                    logging.debug('skipping %s (draft)', path)
+                    logging.debug('skipping %s (draft)', page)
                     continue
                 # skip pages with a date that is in the future
                 elif page['date'] > now:
-                    logging.debug('skipping %s (future-dated)', path)
+                    logging.debug('skipping %s (future-dated)', page)
                     continue
                 # skip expired pages; i.e. with a passed expiry set
                 elif 'expires' in page and page['expires'] < now:
-                    logging.debug('skipping %s (expired)', path)
+                    logging.debug('skipping %s (expired)', page)
                     continue
-                
-                # update the url
-                page['url'] = get_url(page)
 
                 self.pages.append(page)
                 sys.stdout.write('.')
@@ -167,10 +124,6 @@ class Site(object):
         "Deletes the output directory"
         if exists(self.settings['output_dir']):
             rmtree(self.settings['output_dir'])
-
-    def _is_public(self, page):
-        "Return True if page is public"
-        return page['status'] != 'hidden'
 
     def _get_output_path(self, url):
         "Returns the filesystem path for `url`"
@@ -189,7 +142,7 @@ class Site(object):
 
     def _write(self):
         "Writes the parsed data to the filesystem"
-        public_pages = filter(self._is_public, self.pages)
+        public_pages = [page for page in self.pages if page.is_public]
         templating_engine = get_templating_cls(self.settings['templating_engine'])
         template_cls = templating_engine(self.settings)
         for page in self.pages:
@@ -245,7 +198,7 @@ class Site(object):
 
     def run(self):
         start_time = time.time()
-        input_data = self._read_files()
+        input_data = self.data_source.read_files()
         logging.debug("input data %s", input_data)
         self._parse(input_data)
         self._sort()
@@ -257,4 +210,112 @@ class Site(object):
         print("OK (%s %s; %s seconds)" % (
             count, 'page' if count == 1 else 'pages',
             round(finish_time - start_time, 2)))
+
+
+class FilesystemSource(object):
+    """
+    Source of pages which are read from filesystem.
+
+    ... and not a database, for example.
+    """
+
+    def __init__(self, project_dir, build_time, default_template):
+        self.project_dir = project_dir
+        self.build_time = build_time
+        self.default_template = default_template
+
+    def set_urlfunc(self, urlfunc):
+        self.get_url = urlfunc
+
+    def read_files(self):
+        """
+        Walks through the project directory and separates files into
+        parseable files (file extensions for which a parser exists)
+        and static files (file extensions for which no parser exists)
+        """
+        data = OrderedDict()
+        for root, dirs, files in walk_ignore(self.project_dir):
+            pages = []
+            parseables = [] # parseable files; rename to (pages)
+            static = [] # rename to (static)
+
+            # check if a parser exists and append to corresponding list
+            for file in files:
+                path = join(root, file)
+                if parser.get_parser_for_filename(path):
+                    parseables.append(path)
+                else:
+                    static.append(path)
+
+            # create pages from parseables
+            for path in parseables:
+                static_files = static if root != self.project_dir else []
+                pages.append(self._create_page(path, static_files))
+
+            # assign static files with pages
+            if pages:
+                data[root] = (pages, static)
+            elif static:
+                # dir has static file(s) but no pages. check if one of
+                # the parent dirs has a page and associate the static files
+                # with it
+                has_parent = False
+                if root != self.project_dir:
+                    parent_dir = dirname(root)
+                    while parent_dir != self.project_dir:
+                        if parent_dir in data:
+                            data.setdefault(parent_dir, ([], []))[1].\
+                                    extend(static)
+                            has_parent = True
+                        parent_dir = dirname(parent_dir)
+                # if no parent dir could be found, or the file is in the
+                # root dir associate the files with the root of the project dir
+                if not has_parent:
+                    data.setdefault(self.project_dir,
+                                    ([], []))[1].extend(static)
+        return data
+
+    def _create_page(self, path, static_files):
+        page = Page(db=self, get_url=self.get_url, static_files=static_files)
+        page.update(self._get_default_headers(path))
+        return page
+
+    def read(self, path):
+        with open(join(self.project_dir, path), 'r', encoding='utf-8') as f:
+            return f.read()
+
+    def _get_default_headers(self, path):
+        """
+        Returns a dict with the default headers for `path`.
+
+        `path` - the relative path from the project dir to the file
+        `title` - titleized version of the filename
+        `date` - set to ctime. On unix this is the time of the most recent
+                 metadata change; on windows the creation time. If ctime
+                 cannot be accessed (due to permissions), the current
+                 time is used.
+        `status` - set to 'live'
+        `template` - set to 'default.html'
+        `url` - set to "default" rule
+        `slug` - filename or, if the filename is "index", the dirname
+               of the parent directory unless its the top level dir.
+        `output_ext` - the extension of the parsed file
+        """
+        output_ext = splitext(path)[1][1:]
+        root, filename = split(splitext(path)[0])
+        if filename == 'index' and root != self.project_dir:
+            slug = basename(root)
+        else:
+            slug = filename
+        title = filename.title()
+        try:
+            date = pytz.utc.localize(datetime.utcfromtimestamp(getctime(path)))
+        except OSError:
+            # use the current date if the ctime cannot be accessed
+            date = self.build_time
+        template = self.default_template
+        return dict(path=relpath(path, self.project_dir),
+                    title=title, date=date, status='live',
+                    slug=slug, template=template, url='default',
+                    output_ext=output_ext)
 

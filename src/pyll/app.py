@@ -12,8 +12,9 @@ import sys
 import pytz
 
 from pyll import __version__, autoreload
-from pyll.core import Site
+from pyll.core import Site, FilesystemSource
 from pyll.server import LanyonHTTPRequestHandler
+from pyll.template import get_templating_cls
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
 
@@ -115,7 +116,10 @@ def main():
     settings['timezone'] = pytz.timezone(settings['timezone'])
 
     # initialize site
-    site = Site(settings)
+    source = FilesystemSource(settings['project_dir'], settings['build_time'],
+                settings['default_template'] if 'default_template' in settings \
+                else get_templating_cls(settings['templating_engine']).default_template)
+    site = Site(settings, source)
 
     def runserver(server_class=BaseHTTPServer.HTTPServer,
                   handler_class=LanyonHTTPRequestHandler,
