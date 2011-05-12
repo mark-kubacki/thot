@@ -1,4 +1,3 @@
-import BaseHTTPServer
 from codecs import open
 from datetime import datetime
 import logging
@@ -13,7 +12,6 @@ import pytz
 
 from pyll import __version__, autoreload
 from pyll.core import Site, FilesystemSource
-from pyll.server import LanyonHTTPRequestHandler
 from pyll.template import get_templating_cls
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
@@ -60,8 +58,6 @@ def main():
                       dest="quickstart")
     parser.add_option('--logging',
                       help="sets the logging level. 'info' (default) or 'debug'")
-    parser.add_option('--server', help='start a local webserver',
-                      action="store_true", dest="server")
     parser.add_option('--hardlinks', action="store_true",
                       help="instead of copying static files, creates hardlinks" \
                            + " - which is faster and saves space")
@@ -121,25 +117,7 @@ def main():
                 else get_templating_cls(settings['templating_engine']).default_template)
     site = Site(settings, source)
 
-    def runserver(server_class=BaseHTTPServer.HTTPServer,
-                  handler_class=LanyonHTTPRequestHandler,
-                  *args, **kwargs):
-        site.run()
-        handler_class.rootpath = settings['output_dir']
-        server_address = ('', 8000)
-        httpd = server_class(server_address, handler_class)
-        logging.info("serving at port %s", server_address[1])
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            sys.exit(0)
-
-    if options.server:
-        autoreload.main(runserver, (), {'paths': (
-            settings['project_dir'],
-            settings['template_dir'],
-            settings['lib_dir'])})
-    else:
+    if True:
         site.run()
         if options.hardlinks:
             print "Keep in mind: Output directory contains hardlinks."
