@@ -13,7 +13,7 @@ templating_map = dict()
 def get_templating_cls(shortname):
     if shortname in templating_map:
         return templating_map[shortname]
-    for entrypoint in pkg_resources.iter_entry_points('pyll.templating_engines'):
+    for entrypoint in pkg_resources.iter_entry_points('thot.templating_engines'):
         if entrypoint.name == shortname:
             cls = entrypoint.load()
             templating_map[shortname] = cls

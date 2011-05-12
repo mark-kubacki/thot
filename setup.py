@@ -1,10 +1,26 @@
+#!/usr/bin/env python
+#
+# Copyright 2011 W-Mark Kubacki
+#
+# Licensed under the Reciprocal Public License, Version 1.5 (the "License");
+# you may not use this file except in compliance with the License. You may
+# obtain a copy of the License at
+#
+#     http://www.opensource.org/licenses/rpl1.5
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
 from imp import load_source
 from os import walk
 from os.path import join, dirname, abspath
 from setuptools import setup, find_packages
 
-pyll_mod = load_source('pyll', join(dirname(abspath(__file__)),
-                                    'src', 'pyll', '__init__.py'))
+thot_mod = load_source('thot', join(dirname(abspath(__file__)),
+                                    'src', 'thot', '__init__.py'))
 
 def find_data_files(path, prefix):
     lst = []
@@ -27,17 +43,20 @@ def one_supported_templating_engine():
     return ['Jinja2']
 
 setup(
-    name = 'pyll',
-    version = pyll_mod.__version__,
-    url = pyll_mod.__url__,
-    license = 'BSD',
+    name = 'thot',
+    version = thot_mod.__version__,
+    url = 'http://github.com/wmark/thot',
+    download_url = 'http://github.com/downloads/wmark/thot/thot-%s.tbz2' % thot_mod.__version__,
+    license = 'http://www.opensource.org/licenses/rpl1.5',
     description = 'A Python-Powered Static Site Generator',
-    author = 'Arthur Koziel',
+    author = 'W-Mark Kubacki, Arthur Koziel',
+    author_email = 'wmark+thot@hurrikane.de',
 
     packages = find_packages('src'),
     package_dir = {'': 'src'},
     package_data={
-        'pyll': ['templates/default.html',
+        'thot': ['templates/default.html',
+                 'templates/default.mak',
                  ],
     },
     data_files = find_data_files('src/quickstart', 'quickstart'),
@@ -46,25 +65,25 @@ setup(
     test_suite = 'nose.collector',
 
     entry_points = {
-        # install the pyll executable
+        # install the thot executable
         'console_scripts': [
-            'pyll = pyll.app:main'
+            'thot = thot.app:main'
         ],
         # now come the shipped plugins
-        'pyll.templating_engines': [
-            'mako = pyll.plugins.MakoTemplating:MakoTemplate',
-            'jinja2 = pyll.plugins.Jinja2Templating:Jinja2Template',
+        'thot.templating_engines': [
+            'mako = thot.plugins.MakoTemplating:MakoTemplate',
+            'jinja2 = thot.plugins.Jinja2Templating:Jinja2Template',
         ],
-        'pyll.renderer': [
-            'trivial = pyll.parser:Parser',
-            'markdown = pyll.plugins.MarkdownParser:MarkdownParser',
-            'rst = pyll.plugins.RstParser:RstParser',
-            'creole = pyll.plugins.CreoleParser:CreoleParser',
-            'trac = pyll.plugins.TracParser:TracParser',
+        'thot.renderer': [
+            'trivial = thot.parser:Parser',
+            'markdown = thot.plugins.MarkdownParser:MarkdownParser',
+            'rst = thot.plugins.RstParser:RstParser',
+            'creole = thot.plugins.CreoleParser:CreoleParser',
+            'trac = thot.plugins.TracParser:TracParser',
         ],
-        'pyll.processors': [
-            'tags = pyll.plugins.Tagging:PageTags',
-            'category = pyll.plugins.Tagging:PageCategory',
+        'thot.processors': [
+            'tags = thot.plugins.Tagging:PageTags',
+            'category = thot.plugins.Tagging:PageCategory',
         ]
     },
     install_requires = [

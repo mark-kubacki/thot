@@ -1,6 +1,6 @@
 import markdown
 
-from pyll.parser import Parser
+from thot.parser import Parser
 
 __all__ = [
     'MarkdownParser',

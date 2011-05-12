@@ -10,9 +10,9 @@ from shutil import copytree
 import sys
 import pytz
 
-from pyll import __version__, autoreload
-from pyll.core import Site, FilesystemSource
-from pyll.template import get_templating_cls
+from thot import version
+from thot.core import Site, FilesystemSource
+from thot.template import get_templating_cls
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
 
@@ -29,7 +29,7 @@ def quickstart(settings):
         if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
         timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
                              + "'UTC' or something other: ")
-    config = {'pyll': {
+    config = {'thot': {
         'author_name': author_name,
         'author_email': author_email,
         'website_url': website_url,
@@ -48,13 +48,13 @@ def quickstart(settings):
     with open(settings['settings_path'], 'wb', encoding='utf-8') as configfile:
         configfile.write(yaml.dump(config, default_flow_style=False))
 
-    return config['pyll']
+    return config['thot']
 
 
 def main():
-    parser = OptionParser(version="%prog " + __version__)
+    parser = OptionParser(version="%prog " + version)
     parser.add_option('--quickstart',
-                      help="quickstart a pyll site", action="store_true",
+                      help="quickstart a thot site", action="store_true",
                       dest="quickstart")
     parser.add_option('--logging',
                       help="sets the logging level. 'info' (default) or 'debug'")
@@ -97,7 +97,7 @@ def main():
     if exists(settings['settings_path']):
         with open(settings['settings_path'], 'rb', encoding='utf-8') as configfile:
             config = yaml.safe_load(configfile.read())
-        settings.update(config['pyll'])
+        settings.update(config['pyll'] if 'pyll' in config else config['thot'])
     logging.debug('settings %s', settings)
     # check and find the user's timezone
     if not 'timezone' in settings:

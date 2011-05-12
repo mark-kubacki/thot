@@ -11,7 +11,7 @@ try:
 except:
     has_pygments = False
 
-from pyll.parser import Parser
+from thot.parser import Parser
 
 __all__ = [
     'RstParser',

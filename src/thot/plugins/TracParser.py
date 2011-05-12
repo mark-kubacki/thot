@@ -7,7 +7,7 @@ from trac.wiki.formatter import HtmlFormatter
 # importing from trac.wiki.macros registers all macros contained in that module
 from trac.wiki.macros import WikiMacroBase
 
-from pyll.parser import Parser
+from thot.parser import Parser
 
 __all__ = [
     'TracParser',

@@ -106,7 +106,7 @@ def get_parser_for_filename(filename):
     Factory function returning a parser class based on the file extension.
     """
     if len(parser_map) <= 0:
-        for entrypoint in pkg_resources.iter_entry_points('pyll.renderer'):
+        for entrypoint in pkg_resources.iter_entry_points('thot.renderer'):
             try:
                 cls = entrypoint.load()
                 for e in cls.parses:

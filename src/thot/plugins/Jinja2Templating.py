@@ -1,8 +1,8 @@
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PackageLoader
 from jinja2 import TemplateNotFound
 
-from pyll.utils import datetimeformat, ordinal_suffix
-from pyll.template import TemplateException
+from thot.utils import datetimeformat, ordinal_suffix
+from thot.template import TemplateException
 
 __all__ = [
     'Jinja2Template',
@@ -15,7 +15,7 @@ class Jinja2Template(object):
         self.settings = settings
         self.env = Environment(loader=ChoiceLoader([
             FileSystemLoader(self.settings['template_dir']),
-            PackageLoader('pyll')]))
+            PackageLoader('thot')]))
         self.env.filters['datetimeformat'] = datetimeformat
         self.env.filters['ordinalsuffix'] = ordinal_suffix
 

@@ -2,8 +2,8 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 from mako.exceptions import TopLevelLookupException, text_error_template
 
-from pyll.utils import datetimeformat, ordinal_suffix
-from pyll.template import TemplateException
+from thot.utils import datetimeformat, ordinal_suffix
+from thot.template import TemplateException
 
 __all__ = [
     'MakoTemplate',

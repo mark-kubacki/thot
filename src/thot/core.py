@@ -12,10 +12,10 @@ import pytz
 import pkg_resources
 import weakref
 
-from pyll import parser
-from pyll.url import get_url
-from pyll.utils import copy_file, walk_ignore, OrderedDict
-from pyll.template import TemplateException, get_templating_cls
+from thot import parser
+from thot.url import get_url
+from thot.utils import copy_file, walk_ignore, OrderedDict
+from thot.template import TemplateException, get_templating_cls
 
 class Page(dict):
 
@@ -90,7 +90,7 @@ class Site(object):
         """
         Loads and initalizes all available processors.
         """
-        for entrypoint in pkg_resources.iter_entry_points('pyll.processors'):
+        for entrypoint in pkg_resources.iter_entry_points('thot.processors'):
             try:
                 cls = entrypoint.load()
                 cls_instance = cls(weakref.ref(self), self.settings)
