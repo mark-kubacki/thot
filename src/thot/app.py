@@ -9,6 +9,7 @@ from os.path import join, dirname, abspath, \
 from shutil import copytree
 import sys
 import pytz
+import pkg_resources
 
 from thot import version
 from thot.core import Site, FilesystemSource
@@ -35,6 +36,7 @@ def quickstart(settings):
         'website_url': website_url,
         'timezone': timezone,
         'templating_engine': settings['templating_engine'],
+        'source': settings['source'],
     }}
 
     # copy quickstart template
@@ -64,6 +66,8 @@ def main():
     parser.add_option('-t', '--templating', default='mako',
                       dest='templating_engine',
                       help="templating engine (e.g. jinja2, mako) for output")
+    parser.add_option('-s', '--source', default='filesystem',
+                      help="data source, e.g. 'filesystem' for files")
     options, args = parser.parse_args()
 
     try:
@@ -79,6 +83,7 @@ def main():
                 'settings_path': join(project_dir, '_lib', 'settings.cfg'),
                 'hardlinks': options.hardlinks,
                 'templating_engine': options.templating_engine,
+                'source': options.source,
                 'build_time': pytz.utc.localize(datetime.utcnow())}
 
     # configure logging
@@ -111,8 +116,16 @@ def main():
         sys.exit(1)
     settings['timezone'] = pytz.timezone(settings['timezone'])
 
+    # find the data source
+    for entrypoint in pkg_resources.iter_entry_points('thot.sources'):
+        if entrypoint.name == settings['source']:
+            source_cls = entrypoint.load()
+            break
+    else:
+        logging.error('Data source "%s" could not be found.', settings['source'])
+        sys.exit(1)
     # initialize site
-    source = FilesystemSource(settings['project_dir'], settings['build_time'],
+    source = source_cls(settings['project_dir'], settings['build_time'],
                 settings['default_template'] if 'default_template' in settings \
                 else get_templating_cls(settings['templating_engine']).default_template)
     site = Site(settings, source)

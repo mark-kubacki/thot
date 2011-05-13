@@ -84,7 +84,10 @@ setup(
         'thot.processors': [
             'tags = thot.plugins.Tagging:PageTags',
             'category = thot.plugins.Tagging:PageCategory',
-        ]
+        ],
+        'thot.sources': [
+            'filesystem = thot.core:FilesystemSource',
+        ],
     },
     install_requires = [
         'markdown',
