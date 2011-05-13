@@ -61,7 +61,7 @@ def main():
     parser.add_option('--hardlinks', action="store_true",
                       help="instead of copying static files, creates hardlinks" \
                            + " - which is faster and saves space")
-    parser.add_option('-t', '--templating', default='jinja2',
+    parser.add_option('-t', '--templating', default='mako',
                       dest='templating_engine',
                       help="templating engine (e.g. jinja2, mako) for output")
     options, args = parser.parse_args()

@@ -40,7 +40,7 @@ def one_supported_templating_engine():
         return []
     except ImportError:
         pass
-    return ['Jinja2']
+    return ['Mako >= 0.4.0']
 
 setup(
     name = 'thot',
