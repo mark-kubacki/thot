@@ -56,7 +56,7 @@ class TracParser(Parser):
     def _parse_text(self):
         env, context = self.create_trac_ctx(
             self.settings['website_url'],
-            self.headers['author_name'] if 'author_name' in self.headers else self.settings['author_name'],
+            self.headers['author']['name'] if ('author' in self.headers and 'name' in self.headers['author']) else self.settings['author']['name'],
             str(self.headers['timezone']) if 'timezone' in self.headers else str(self.settings['timezone']),
             self.filename if self.filename.startswith('/') else '/'+self.filename)
         formatter = HtmlFormatter(env, context, self.text)

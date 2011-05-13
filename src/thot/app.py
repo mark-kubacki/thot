@@ -31,8 +31,8 @@ def quickstart(settings):
         timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
                              + "'UTC' or something other: ")
     config = {'thot': {
-        'author_name': author_name,
-        'author_email': author_email,
+        'author': {'name': author_name,
+                   'email': author_email},
         'website_url': website_url,
         'timezone': timezone,
         'templating_engine': settings['templating_engine'],

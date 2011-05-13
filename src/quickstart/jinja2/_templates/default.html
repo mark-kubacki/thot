@@ -3,7 +3,7 @@
 <head>
    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
    <title>{{ page.title }}</title>
-   <meta name="author" content="{{ settings.author_name }}" />
+   <meta name="author" content="{{ settings.author.name }}" />
 
    <!-- syntax highlighting CSS -->
    <link rel="stylesheet" href="css/syntax.css" type="text/css" />
@@ -15,7 +15,7 @@
 
 <div class="site">
   <div class="title">
-    <a href="/">{{ settings.author_name }}</a>
+    <a href="/">{{ settings.author.name }}</a>
   </div>
 
   {% block content %}{% endblock %}
@@ -23,12 +23,12 @@
   <div class="footer">
     <div class="contact">
       <p>
-        {{ settings.author_name }}
+        {{ settings.author.name }}
       </p>
     </div>
     <div class="contact">
       <p>
-        <a href="{{ settings.author_email }}">{{ settings.author_email }}</a>
+        <a href="mailto:{{ settings.author.email }}">{{ settings.author.email }}</a>
       </p>
     </div>
     <div class="rss">
