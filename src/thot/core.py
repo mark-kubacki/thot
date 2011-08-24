@@ -2,6 +2,7 @@ from codecs import open
 from datetime import datetime
 import imp
 import logging
+import types
 from os import makedirs
 from os.path import splitext, join, dirname, split, getctime, \
                     basename, exists, relpath, isabs
@@ -207,6 +208,7 @@ class Site(object):
                                        pages=public_pages,
                                        settings=self.settings,
                                        **params)
+                assert type(rendered) == types.UnicodeType
             except TemplateException as error:
                 logging.error(error)
                 logging.error('skipping article "%s"', page['path'])
