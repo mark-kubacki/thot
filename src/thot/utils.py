@@ -97,13 +97,13 @@ def copy_file(src, dst, hardlinks=False):
         if hardlinks:
             try:
                 os.link(src, dst)
+                return
             except OSError:
                 logging.debug("Could not create hardlink for '%s'->'%s'.",
                               src, dst)
-                shutil.copy(src, dst)
-        else:
-            shutil.copy(src, dst)
+        shutil.copy(src, dst)
     except IOError:
+        logging.debug("Caught IOError when copying '%s'->'%s'.", src, dst)
         pass
 
 ################################################################################
