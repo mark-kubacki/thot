@@ -116,7 +116,7 @@ class Site(object):
         for input_dir in input_data:
             pages, static_files = input_data[input_dir]
 
-            # special case: static files at the top level of the project dir 
+            # special case: static files at the top level of the project dir
             # are not associated with any pages
             if input_dir == self.settings['project_dir']:
                 self.static_files = static_files
@@ -166,7 +166,7 @@ class Site(object):
         "Returns the filesystem path for `url`"
         if isabs(url):
             # omit starting slash char; if we wouldn't do this, the
-            # join() below would return a path that starts from 
+            # join() below would return a path that starts from
             # the root of the filesystem instead of the output_dir.
             url = url[1:]
         if not basename(url):
@@ -230,7 +230,7 @@ class Site(object):
         for page in self.pages:
             for static_file in page['static_files']:
                 dst = join(self.settings['output_dir'],
-                           dirname(_get_output_path(page['url'])),
+                           dirname(self._get_output_path(page['url'])),
                            relpath(static_file, dirname(page['path'])))
                 logging.debug('copying %s to %s', static_file, dst)
                 copy_file(static_file, dst, self.settings['hardlinks'])
