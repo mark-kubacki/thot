@@ -4,8 +4,7 @@ import logging
 import yaml
 from optparse import OptionParser
 from os import makedirs, getcwd, getlogin
-from os.path import join, dirname, abspath, \
-                    exists, normpath
+from os.path import join, dirname, abspath, exists
 from shutil import copytree
 import sys
 import time
@@ -47,7 +46,7 @@ def quickstart(settings):
     }}
 
     # copy quickstart template
-    tmpl_path = normpath(join(dirname(abspath(__file__)), '..', 'quickstart', settings['templating_engine']))
+    tmpl_path = join(sys.prefix, 'share', 'thot', 'quickstart', settings['templating_engine'])
     copytree(tmpl_path, settings['project_dir'])
 
     # before writing the settings file, make sure the _lib dir exists

@@ -59,7 +59,7 @@ setup(
                  'templates/default.mak',
                  ],
     },
-    data_files = find_data_files('src/quickstart', 'quickstart'),
+    data_files = find_data_files('src/quickstart', 'share/thot/quickstart'),
     zip_safe = False,
 
     test_suite = 'nose.collector',
@@ -97,4 +97,3 @@ setup(
         'PyYAML',
     ] + one_supported_templating_engine(),
 )
-
