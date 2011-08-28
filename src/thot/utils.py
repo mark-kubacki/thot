@@ -65,7 +65,7 @@ def equivalent_files(src, dst):
     "True if `src` and `dst` are the equivalent."
     # Same inode on same device <=> thus identical?
     src_stat, dst_stat = os.stat(src), os.stat(dst)
-    if src_stat.dev == dst_stat.dev and src_stat.st_ino == dst_stat.st_ino:
+    if src_stat.st_dev == dst_stat.st_dev and src_stat.st_ino == dst_stat.st_ino:
         return True
     # Else, same file content?
     else:

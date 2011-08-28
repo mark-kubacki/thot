@@ -5,7 +5,7 @@ import logging
 import types
 from os import makedirs, utime
 from os.path import splitext, join, dirname, split, getmtime, \
-                    basename, exists, relpath, isabs
+                    basename, exists, relpath, isabs, isfile
 from shutil import rmtree, copytree, copystat
 import sys
 import time
@@ -236,9 +236,10 @@ class Site(object):
            and self.settings['make_compressed_copy']:
             for ending in self.settings['compress_if_ending']:
                 if static_file.endswith(ending):
-                    with open(static_file, 'rb') as fin, gzip.open(dst+'.gz', 'wb') as fout:
-                        fout.writelines(fin)
-                    copystat(static_file, dst+'.gz')
+                    if not isfile(static_file+'.gz'):
+                        with open(static_file, 'rb') as fin, gzip.open(dst+'.gz', 'wb') as fout:
+                            fout.writelines(fin)
+                        copystat(static_file, dst+'.gz')
                     break
 
     def _copy_static_files(self):
@@ -250,12 +251,15 @@ class Site(object):
             self._copy_static_file(static_file, dst)
 
         # static files that are associated with pages
+        page_files = []
         for page in self.pages:
             for static_file in page['static_files']:
                 dst = join(self.settings['output_dir'],
                            dirname(self._get_output_path(page['url'])),
                            relpath(static_file, dirname(page['path'])))
-                self._copy_static_file(static_file, dst)
+                page_files.append((static_file, dst))
+        for static_file, dst in frozenset(page_files):
+            self._copy_static_file(static_file, dst)
 
     def run(self):
         start_time = time.time()
