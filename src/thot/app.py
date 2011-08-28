@@ -17,6 +17,12 @@ from thot.core import Site, FilesystemSource
 from thot.template import get_templating_cls
 
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
+GZIP_ENDINGS = [
+    '.css', '.js', '.xml', '.txt', '.sh', '.svg',
+    '.xls', '.doc', '.xjs', '.psd', '.ppt',
+    '.java', '.py', '.pyc', '.pyo', '.bat', '.dll', '.lib',
+    '.cfg', '.ini',
+    ]
 
 def quickstart(settings):
     login = getlogin()
@@ -64,6 +70,8 @@ def main():
     parser.add_option('--hardlinks', action="store_true",
                       help="instead of copying static files, creates hardlinks" \
                            + " - which is faster and saves space")
+    parser.add_option('-z', '--gzip', action="store_true",
+                      help="make a gzip-compressed copy of rendered files")
     parser.add_option('-t', '--templating', default='mako',
                       dest='templating_engine',
                       help="templating engine (e.g. jinja2, mako) for output")
@@ -83,6 +91,8 @@ def main():
                 'url_path': join(project_dir, '_lib', 'urls.py'),
                 'settings_path': join(project_dir, '_lib', 'settings.cfg'),
                 'hardlinks': options.hardlinks,
+                'make_compressed_copy': options.gzip,
+                'compress_if_ending': GZIP_ENDINGS,
                 'templating_engine': options.templating_engine,
                 'source': options.source,
                 'build_tz': pytz.timezone(time.strftime("%Z", time.gmtime())),

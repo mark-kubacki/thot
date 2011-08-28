@@ -1,4 +1,4 @@
-from codecs import open
+import codecs
 from datetime import datetime
 import imp
 import logging
@@ -6,12 +6,13 @@ import types
 from os import makedirs, utime
 from os.path import splitext, join, dirname, split, getmtime, \
                     basename, exists, relpath, isabs
-from shutil import rmtree, copytree
+from shutil import rmtree, copytree, copystat
 import sys
 import time
 import pytz
 import pkg_resources
 import weakref
+import gzip
 
 from thot import parser
 from thot.url import get_url
@@ -216,11 +217,29 @@ class Site(object):
 
             # write to filesystem
             logging.debug("writing %s to %s", page['path'], output_path)
-            with open(output_path, 'w', 'utf-8') as f:
+            with codecs.open(output_path, 'w', 'utf-8') as f:
                 f.write(rendered)
             page_dt_for_fs = page['date'].astimezone(self.settings['build_tz'])
             atime = mtime = int(time.mktime(page_dt_for_fs.timetuple()))
             utime(output_path, (atime, mtime))
+
+            # GZIP output for webservers which support pre-compressed files
+            if self.settings['make_compressed_copy']:
+                gz_output_path = output_path+'.gz'
+                with gzip.GzipFile(gz_output_path, 'w', mtime=mtime) as f:
+                    f.write(rendered.encode('utf-8'))
+                utime(gz_output_path, (atime, mtime))
+
+    def _copy_static_file(self, static_file, dst):
+        logging.debug('copying %s to %s', static_file, dst)
+        if copy_file(static_file, dst, self.settings['hardlinks']) \
+           and self.settings['make_compressed_copy']:
+            for ending in self.settings['compress_if_ending']:
+                if static_file.endswith(ending):
+                    with open(static_file, 'rb') as fin, gzip.open(dst+'.gz', 'wb') as fout:
+                        fout.writelines(fin)
+                    copystat(static_file, dst+'.gz')
+                    break
 
     def _copy_static_files(self):
         "Copies static files to output directory"
@@ -228,8 +247,7 @@ class Site(object):
         for static_file in self.static_files:
             dst = join(self.settings['output_dir'],
                        relpath(static_file, self.settings['project_dir']))
-            logging.debug('copying %s to %s', static_file, dst)
-            copy_file(static_file, dst, self.settings['hardlinks'])
+            self._copy_static_file(static_file, dst)
 
         # static files that are associated with pages
         for page in self.pages:
@@ -237,8 +255,7 @@ class Site(object):
                 dst = join(self.settings['output_dir'],
                            dirname(self._get_output_path(page['url'])),
                            relpath(static_file, dirname(page['path'])))
-                logging.debug('copying %s to %s', static_file, dst)
-                copy_file(static_file, dst, self.settings['hardlinks'])
+                self._copy_static_file(static_file, dst)
 
     def run(self):
         start_time = time.time()
@@ -325,7 +342,7 @@ class FilesystemSource(object):
         return page
 
     def read(self, path):
-        with open(join(self.project_dir, path), 'r', encoding='utf-8') as f:
+        with codecs.open(join(self.project_dir, path), 'r', encoding='utf-8') as f:
             return f.read()
 
     def _get_default_headers(self, path):

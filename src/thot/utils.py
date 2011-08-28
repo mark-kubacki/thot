@@ -92,16 +92,17 @@ def copy_file(src, dst, hardlinks=False):
 
     if os.path.isfile(dst):
         if equivalent_files(src, dst):
-            return
+            return False
     try:
         if hardlinks:
             try:
                 os.link(src, dst)
-                return
+                return True
             except OSError:
                 logging.debug("Could not create hardlink for '%s'->'%s'.",
                               src, dst)
         shutil.copy2(src, dst)
+        return True
     except IOError:
         logging.debug("Caught IOError when copying '%s'->'%s'.", src, dst)
         pass
