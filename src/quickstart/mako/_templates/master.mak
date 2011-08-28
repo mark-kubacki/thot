@@ -3,32 +3,33 @@
 <head>
    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
    <title>${ page['title'] }</title>
+   <meta name="generator" content="Thot ${ thot_version }" />
    <meta name="author" content="${ settings['author']['name'] }" />
 
-   <!-- syntax highlighting CSS -->
+## syntax highlighting CSS
    <link rel="stylesheet" href="css/syntax.css" type="text/css" />
 
-   <!-- Homepage CSS -->
+## Homepage CSS
    <link rel="stylesheet" href="css/screen.css" type="text/css" media="screen, projection" />
 </head>
 <body>
 
 <div class="site">
   <div class="title">
-    <a href="/">${ settings['author']['name'] }</a>
+    <a href="/">${ settings['author']['name'] }'s Blog</a>
   </div>
 
   ${next.body()}
-  
+
   <div class="footer">
     <div class="contact">
       <p>
-        ${ settings['author']['name'] }
+        <a href="mailto:${ settings['author']['email'] }">${ settings['author']['name'] }</a>
       </p>
     </div>
     <div class="contact">
       <p>
-        <a href="mailto:${ settings['author']['email'] }">${ settings['author']['email'] }</a>
+        <a href="http://github.com/wmark/thot">powered by Thot</a>
       </p>
     </div>
     <div class="rss">

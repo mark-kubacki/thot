@@ -14,7 +14,7 @@ import pkg_resources
 import weakref
 import gzip
 
-from thot import parser
+from thot import parser, version as thot_version
 from thot.url import get_url
 from thot.utils import copy_file, walk_ignore, OrderedDict
 from thot.template import TemplateException, get_templating_cls
@@ -208,6 +208,7 @@ class Site(object):
                                        page=page,
                                        pages=public_pages,
                                        settings=self.settings,
+                                       thot_version=thot_version,
                                        **params)
                 assert type(rendered) == types.UnicodeType
             except TemplateException as error:
