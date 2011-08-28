@@ -101,7 +101,7 @@ def copy_file(src, dst, hardlinks=False):
             except OSError:
                 logging.debug("Could not create hardlink for '%s'->'%s'.",
                               src, dst)
-        shutil.copy(src, dst)
+        shutil.copy2(src, dst)
     except IOError:
         logging.debug("Caught IOError when copying '%s'->'%s'.", src, dst)
         pass

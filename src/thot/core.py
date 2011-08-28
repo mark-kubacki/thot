@@ -3,8 +3,8 @@ from datetime import datetime
 import imp
 import logging
 import types
-from os import makedirs
-from os.path import splitext, join, dirname, split, getctime, \
+from os import makedirs, utime
+from os.path import splitext, join, dirname, split, getmtime, \
                     basename, exists, relpath, isabs
 from shutil import rmtree, copytree
 import sys
@@ -218,6 +218,9 @@ class Site(object):
             logging.debug("writing %s to %s", page['path'], output_path)
             with open(output_path, 'w', 'utf-8') as f:
                 f.write(rendered)
+            page_dt_for_fs = page['date'].astimezone(self.settings['build_tz'])
+            atime = mtime = int(time.mktime(page_dt_for_fs.timetuple()))
+            utime(output_path, (atime, mtime))
 
     def _copy_static_files(self):
         "Copies static files to output directory"
@@ -331,10 +334,9 @@ class FilesystemSource(object):
 
         `path` - the relative path from the project dir to the file
         `title` - titleized version of the filename
-        `date` - set to ctime. On unix this is the time of the most recent
-                 metadata change; on windows the creation time. If ctime
-                 cannot be accessed (due to permissions), the current
-                 time is used.
+        `date` - set to mtime. This is the time of the most recent
+                 content change. If mtime cannot be accessed (due
+                 to permissions), the current time is used.
         `status` - set to 'live'
         `template` - set to 'default.html'
         `url` - set to "default" rule
@@ -350,7 +352,7 @@ class FilesystemSource(object):
             slug = filename
         title = filename.title()
         try:
-            date = pytz.utc.localize(datetime.utcfromtimestamp(getctime(path)))
+            date = pytz.utc.localize(datetime.utcfromtimestamp(getmtime(path)))
         except OSError:
             # use the current date if the ctime cannot be accessed
             date = self.build_time
@@ -359,4 +361,3 @@ class FilesystemSource(object):
                     title=title, date=date, status='live',
                     slug=slug, template=template, url='default',
                     output_ext=output_ext)
-

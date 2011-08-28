@@ -8,6 +8,7 @@ from os.path import join, dirname, abspath, \
                     exists, normpath
 from shutil import copytree
 import sys
+import time
 import pytz
 import pkg_resources
 
@@ -46,7 +47,7 @@ def quickstart(settings):
     # before writing the settings file, make sure the _lib dir exists
     if not exists(settings['lib_dir']):
         makedirs(settings['lib_dir'])
-    
+
     with open(settings['settings_path'], 'wb', encoding='utf-8') as configfile:
         configfile.write(yaml.dump(config, default_flow_style=False))
 
@@ -74,7 +75,7 @@ def main():
         project_dir = abspath(args[0])
     except IndexError:
         project_dir = abspath(getcwd())
-    
+
     settings = {'project_dir': project_dir,
                 'output_dir': join(project_dir, '_output'),
                 'template_dir': join(project_dir, '_templates'),
@@ -84,6 +85,7 @@ def main():
                 'hardlinks': options.hardlinks,
                 'templating_engine': options.templating_engine,
                 'source': options.source,
+                'build_tz': pytz.timezone(time.strftime("%Z", time.gmtime())),
                 'build_time': pytz.utc.localize(datetime.utcnow())}
 
     # configure logging
@@ -91,7 +93,7 @@ def main():
     logging.basicConfig(level=logging_level,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    
+
     # quickstart
     if options.quickstart:
         quickstart(settings)
