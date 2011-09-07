@@ -137,6 +137,7 @@ def main():
         sys.exit(1)
     # initialize site
     source = source_cls(settings['project_dir'], settings['build_time'],
+                settings['timezone'],
                 settings['default_template'] if 'default_template' in settings \
                 else get_templating_cls(settings['templating_engine']).default_template)
     site = Site(settings, source)

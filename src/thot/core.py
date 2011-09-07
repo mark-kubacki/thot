@@ -285,9 +285,10 @@ class FilesystemSource(object):
     ... and not a database, for example.
     """
 
-    def __init__(self, project_dir, build_time, default_template):
+    def __init__(self, project_dir, build_time, build_tz, default_template):
         self.project_dir = project_dir
         self.build_time = build_time
+        self.build_tz = build_tz
         self.default_template = default_template
 
     def set_urlfunc(self, urlfunc):
@@ -378,6 +379,7 @@ class FilesystemSource(object):
         except OSError:
             # use the current date if the ctime cannot be accessed
             date = self.build_time
+        date = date.astimezone(self.build_tz)
         template = self.default_template
         return dict(path=relpath(path, self.project_dir),
                     title=title, date=date, status='live',
