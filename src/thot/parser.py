@@ -1,6 +1,7 @@
 import logging
 import yaml
 import pytz
+import types
 from datetime import datetime, date, time
 from os.path import splitext
 import pkg_resources
@@ -46,6 +47,9 @@ class Parser(object):
         """
         Applies the user's timezone.
         """
+        assert type(value) not in types.StringTypes, \
+            'Date header has been set in "%s" but cannot be parsed. Please use ISO-8601. Time with seconds.' \
+            % self.filename
         # if the date is localized - do nothing
         if hasattr(value, 'tzname') and value.tzname():
             return value

@@ -95,6 +95,7 @@ date
   Date and optionally time of the page. If missing, the "ctime" of the page's file is used.
   If the date is in the future, the page won't be published [1]_ before that date ("scheduled").
   Your (default) timezone is taken into consideration.
+  The format is ISO-8691, ```yyyy-MM-dd``` such as in ```2011-09-07``` or ```yyyy-MM-dd HH:mm:ss```.
 
 timezone
   Set this if you want to overwrite your default timezone for that page.
