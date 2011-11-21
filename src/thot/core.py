@@ -149,7 +149,11 @@ class Site(object):
                 if page.dont_render(now):
                     continue
 
-                # on to the actual content
+                # for example, load comments from a webservice or different file
+                for proc in self.processors_for('before_page_parsing'):
+                    proc.before_page_parsing(page)
+
+                # rendering of the actual content
                 try:
                     page.parse()
                 except parser.ParserException as parser_error:
