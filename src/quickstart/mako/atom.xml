@@ -15,11 +15,11 @@ template: self
 
     % for page in pages:
     <entry>
-        <title>${ page['title'] }</title>
+        <title><![CDATA[${ page['title'] }]]></title>
         <link href="${ settings['website_url'] }/${ page['url'] }" />
         <updated>${ page['date'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
         <id>${ settings['website_url'] }/${ page['url'] }</id>
-        <content type="html">${ page['content'] | entity }</content>
+        <content type="html"><![CDATA[${ page['content'] | entity }]]></content>
     </entry>
     % endfor
 </feed>
