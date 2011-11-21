@@ -12,7 +12,8 @@ template: self
   % endif
 
   <ul class="posts">
-    % for page in collection:
-        <li><span>${ page['date'] | n,datetimeformat("%d %b %Y") }</span> &raquo; <a href="${ page['url'] }">${ page['title'] }</a></li>
+    % for item in collection:
+        <li><span>${ item['date'] | n,datetimeformat("%d %b %Y") }</span> &raquo; <a href="${ item['url'] }">${ item['title'] }</a></li>
+        <% if page['date'] < item['date']: page['date'] = item['date'] %>
     % endfor
   </ul>

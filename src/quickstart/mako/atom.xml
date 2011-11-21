@@ -21,5 +21,6 @@ template: self
         <id>${ settings['website_url'] }/${ page['url'] }</id>
         <content type="html"><![CDATA[${ page['content'] | entity }]]></content>
     </entry>
+    <% if page['date'] < item['date']: page['date'] = item['date'] %>
     % endfor
 </feed>
