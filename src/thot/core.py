@@ -41,19 +41,22 @@ class Page(dict):
             self.parser_cls = parser.get_parser_for_filename(self['path'])
         return self.parser_cls
 
-    def parse(self, site_settings): # throws parser.ParserException
+    def load(self, site_settings):
         raw = self.db.read(self['path'])
         parser_cls = self.get_parser_class()
-        parser_inst = parser_cls(site_settings, raw, self['path'])
-        parsed = parser_inst.parse()
-
-        # update the values in the page dict
-        self.update(content=parsed[1], **parsed[0])
+        self.parser_inst = parser_cls(site_settings, raw, self['path'])
         if parser_cls.output_ext:
-            self.update(output_ext=parser_cls.output_ext)
+            self['output_ext'] = parser_cls.output_ext
 
+    def parse_headers(self):
+        self.update(**self.parser_inst.parse_headers())
         # update the url
         self['url'] = self.get_url(self)
+
+    def parse(self): # throws parser.ParserException
+        headers, content = self.parser_inst.parse()
+        # update the values in the page dict
+        self['content'] = content
 
     def copy(self):
         clone = Page(self.db, self.get_url, **dict(self))
@@ -124,12 +127,8 @@ class Site(object):
                 self.static_files = static_files
 
             for page in pages:
-                try:
-                    page.parse(self.settings)
-                except parser.ParserException as parser_error:
-                    logging.error(parser_error)
-                    logging.error('skipping article "%s"', page)
-                    continue
+                page.load(self.settings)
+                page.parse_headers()
 
                 # skip drafts
                 if page['status'] == 'draft':
@@ -142,6 +141,14 @@ class Site(object):
                 # skip expired pages; i.e. with a passed expiry set
                 elif 'expires' in page and page['expires'] < now:
                     logging.debug('skipping %s (expired)', page)
+                    continue
+
+                # on to the actual content
+                try:
+                    page.parse()
+                except parser.ParserException as parser_error:
+                    logging.error(parser_error)
+                    logging.error('skipping article "%s"', page)
                     continue
 
                 # for example, collect tags and categories

@@ -26,22 +26,26 @@ class Parser(object):
         self.settings = settings
         self.source = source
         self.headers = {}
+        self.header_raw = ''
         self.text = ''
         self.filename = filename
 
-    def _parse_headers(self):
+    def parse_headers(self):
         """
         Parses the headers from the source.
         """
-        self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
-        for key in self.headers:
-            value = self.headers[key]
-            if value:
-                # custom header transformation
-                header_method = getattr(self, '_parse_%s_header' % key,
-                                        None)
-                if header_method:
-                    self.headers[key] = header_method(value)
+        if not self.headers:
+            self._split_input()
+            self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
+            for key in self.headers:
+                value = self.headers[key]
+                if value:
+                    # custom header transformation
+                    header_method = getattr(self, '_parse_%s_header' % key,
+                                            None)
+                    if header_method:
+                        self.headers[key] = header_method(value)
+        return self.headers
 
     def _parse_date_header(self, value):
         """
@@ -80,13 +84,16 @@ class Parser(object):
         Returns the raw input text. Override this method to process
         text in another markup language such as Markdown.
         """
-        return self.text
+        # self.text = something
+        pass
 
     def _split_input(self):
         """
         Segregates header from actual text.
         Used to later parse these parts a different way.
         """
+        if self.text:
+            return
         parts = self.source.split("\n\n", 1)
         if len(parts) < 2:
             parts = self.source.split("---\n", 1)
@@ -95,12 +102,11 @@ class Parser(object):
             self.text = parts[-1]
         else:
             logging.warn("'%s' has no headers, only content - at least 'title' will be missing.", self.filename)
-            self.header_raw = ''
             self.text = self.source
 
     def parse(self):
         self._split_input()
-        self._parse_headers()
+        self.parse_headers()
         self._parse_text()
         return (self.headers, self.text)
 
