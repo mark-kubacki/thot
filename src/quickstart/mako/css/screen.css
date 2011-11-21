@@ -20,6 +20,7 @@ body {
   font: 13.34px helvetica, arial, clean, sans-serif;
   *font-size: small;
   text-align: center;
+  min-width: 920px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -81,9 +82,14 @@ ul.posts {
 .site {
   font-size: 110%;
   text-align: justify;
-  width: 40em;
+  width: 900px;
   margin: 3em auto 2em auto;
   line-height: 1.5em;
+}
+
+.site.wide {
+  width: auto;
+  margin: 3em 20px 2em 20px;
 }
 
 .title {
@@ -148,7 +154,22 @@ ul.posts {
 /*****************************************************************************/
 
 #post {
+	column-width: 28em;
+	-moz-column-width: 28em;
+	-webkit-column-width: 28em;
+	column-gap: 0.7em;
+	-moz-column-gap: 15px;
+	-webkit-column-gap: 15px;
+}
 
+#post table.footnote,
+#post p.meta {
+	column-span: all;
+	-webkit-column-span: all;
+}
+
+#post table.footnote {
+	margin-top: 0.5em;
 }
 
   /* standard */
@@ -186,6 +207,22 @@ ul.posts {
   #post pre.terminal code {
     background-color: #333;
   }
+
+#post blockquote {
+  padding: 8px;
+  background-color: #faebbc;
+  border-top: 1px solid #e1cc89;
+  border-bottom: 1px solid #e1cc89;
+  margin: 5px;
+  text-indent: 23px;
+  background-repeat: no-repeat;
+  /* prior to CSS3 */
+  background-image: url(data:image/gif;base64,R0lGODlhGQAZALMPAOzXqurVpO3YruXRlu7asebSmujUoOTPk+LNjPDcuOPOkOvWp+fTne/btOHMifHduyH5BAEAAA8ALAAAAAAZABkAAARe8MlJq7046827/2AocsBxCUeyJYUTWIy7HghhDY7AtXZlOACOwGGwNByFTuvlI3YUjqhjMcFJmRio1NGzSoMYb5T6iG2xFsDW0ZAQ1roMAOFAgCUCLXnE7/v/gIGBEQA7);
+  background-position: top left;
+  /* CSS3 and later */
+  background-image: url(data:image/gif;base64,R0lGODlhGQAZALMPAOzXqurVpO3YruXRlu7asebSmujUoOTPk+LNjPDcuOPOkOvWp+fTne/btOHMifHduyH5BAEAAA8ALAAAAAAZABkAAARe8MlJq7046827/2AocsBxCUeyJYUTWIy7HghhDY7AtXZlOACOwGGwNByFTuvlI3YUjqhjMcFJmRio1NGzSoMYb5T6iG2xFsDW0ZAQ1roMAOFAgCUCLXnE7/v/gIGBEQA7), url(data:image/gif;base64,R0lGODlhGQAZALMNAO7aseTPk+XRlvDcuO3Yru/btOPOkOLNjOjUoOfTnerVpObSmuHMifHduwAAAAAAACH5BAEAAA0ALAAAAAAZABkAAARisMlJq7046827/2AoYoXAMAhVnslmnswyvaecwfAgGTgDZIEeQUI7DTGAIOzXSOKOmgLjoKMMTlUNgdGqALidgCE7CRwKm4HgwKSYoEhDAE1JGtoZhOKiSI3+gIGCg4SFFBEAOw==);
+  background-position: top left, bottom right;
+}
 
 #related {
   margin-top: 2em;
