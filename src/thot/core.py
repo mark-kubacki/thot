@@ -36,6 +36,22 @@ class Page(dict):
     def is_parsed(self):
         return 'content' in self
 
+    def dont_render(self, now):
+        "True if the page shall be excluded from being rendered."
+        # skip drafts
+        if self['status'] == 'draft':
+            logging.debug('skipping %s (draft)', self)
+            return True
+        # skip pages with a date that is in the future
+        elif self['date'] > now:
+            logging.debug('skipping %s (future-dated)', self)
+            return True
+        # skip expired pages; i.e. with a passed expiry set
+        elif 'expires' in self and self['expires'] < now:
+            logging.debug('skipping %s (expired)', page)
+            return True
+        return False
+
     def get_parser_class(self):
         if not self.parser_cls:
             self.parser_cls = parser.get_parser_for_filename(self['path'])
@@ -130,17 +146,7 @@ class Site(object):
                 page.load(self.settings)
                 page.parse_headers()
 
-                # skip drafts
-                if page['status'] == 'draft':
-                    logging.debug('skipping %s (draft)', page)
-                    continue
-                # skip pages with a date that is in the future
-                elif page['date'] > now:
-                    logging.debug('skipping %s (future-dated)', page)
-                    continue
-                # skip expired pages; i.e. with a passed expiry set
-                elif 'expires' in page and page['expires'] < now:
-                    logging.debug('skipping %s (expired)', page)
+                if page.dont_render(now):
                     continue
 
                 # on to the actual content
