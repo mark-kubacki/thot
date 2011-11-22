@@ -1,4 +1,6 @@
-ve/
+build
+dist
+README.pdf
 *.py[co]
 *.egg
 *.egg-info
