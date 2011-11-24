@@ -7,10 +7,10 @@
    <meta name="author" content="${ settings['author']['name'] }" />
 
 ## syntax highlighting CSS
-   <link rel="stylesheet" href="css/syntax.css" type="text/css" />
+   <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
 
 ## Homepage CSS
-   <link rel="stylesheet" href="css/screen.css" type="text/css" media="screen, projection" />
+   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
 </head>
 <body>
 
@@ -33,7 +33,7 @@
       </p>
     </div>
     <div class="rss">
-      <a href="atom.xml"><img src="img/rss.png" alt="Subscribe to RSS Feed" /></a>
+      <a href="/atom.xml"><img src="/img/rss.png" alt="Subscribe to RSS Feed" /></a>
     </div>
   </div>
 </div>
