@@ -19,7 +19,7 @@ template: self
         <link href="${ settings['website_url'] }/${ item['url'] }" />
         <updated>${ item['date'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
         <id>${ settings['website_url'] }/${ item['url'] }</id>
-        <content type="html"><![CDATA[${ item['content'] | entity }]]></content>
+        <content type="html"><![CDATA[${ item['content'] }]]></content>
     </entry>
     <% if page['date'] < item['date']: page['date'] = item['date'] %>
     % endfor
