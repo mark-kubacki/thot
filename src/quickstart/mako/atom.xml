@@ -13,13 +13,13 @@ template: self
         <email>${ settings['author']['email'] }</email>
     </author>
 
-    % for page in pages:
+    % for item in pages:
     <entry>
-        <title><![CDATA[${ page['title'] }]]></title>
-        <link href="${ settings['website_url'] }/${ page['url'] }" />
-        <updated>${ page['date'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
-        <id>${ settings['website_url'] }/${ page['url'] }</id>
-        <content type="html"><![CDATA[${ page['content'] | entity }]]></content>
+        <title><![CDATA[${ item['title'] }]]></title>
+        <link href="${ settings['website_url'] }/${ item['url'] }" />
+        <updated>${ item['date'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
+        <id>${ settings['website_url'] }/${ item['url'] }</id>
+        <content type="html"><![CDATA[${ item['content'] | entity }]]></content>
     </entry>
     <% if page['date'] < item['date']: page['date'] = item['date'] %>
     % endfor
