@@ -94,9 +94,11 @@ class Parser(object):
         """
         if self.text:
             return
-        parts = self.source.split("\n\n", 1)
+        parts = []
+        if self.source.startswith('---') and self.source.count("---\n") >= 2:
+            parts = self.source.split("\n---\n", 1)
         if len(parts) < 2:
-            parts = self.source.split("---\n", 1)
+            parts = self.source.split("\n\n", 1)
         if len(parts) >= 2:
             self.header_raw = parts[0]
             self.text = parts[-1]
