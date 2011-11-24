@@ -77,7 +77,7 @@ if export_posts:
 		authors[data['ID']] = {'name': data['name'], 'email': data['email']}
 	logging.info("Number of authors: %d", len(authors))
 	if len(authors) < 2:
-		logging.info("Won't write explicit author information to posts, because this is no multi-author installation. Which is very common and perfectly okay. ;-)")
+		logging.info("Won't write author information to posts, because this is no multi-author installation. Which is very common and perfectly okay. ;-)")
 
 	# tags and categories
 	cur.execute(
@@ -114,7 +114,7 @@ if export_posts:
 		terms = [{'term': row[0], 'slug': row[1]} for row in cur]
 		logging.debug('%d terms have been found', len(terms))
 		with codecs.open(termfile_path, 'wb', encoding='utf-8') as termfile:
-			termfile.write(yaml.dump(terms, default_flow_style=False))
+			termfile.write(yaml.safe_dump(terms, default_flow_style=False))
 	else:
 		logging.info('A termfile already exists. Will skip creating a new one.')
 
@@ -131,6 +131,7 @@ if export_posts:
 			logging.warn('skipping "%s" (already exists or name conflict)', postfile_path)
 			continue
 		logging.debug('working on "%s"', postfile_path)
+		### post['template'] = 'post.mak'
 		# We assume that 'post_date' aka 'date' will be in the same timezone as in the old blog.
 		# Therefore it doesn't get localized.
 		post['post_modified_gmt'] = GMT.localize(post['post_modified_gmt'])
@@ -170,7 +171,7 @@ if export_posts:
 				makedirs(target_dir)
 		with codecs.open(postfile_path, 'wb', encoding='utf-8') as postfile:
 			del post['cruft']
-			postfile.write(yaml.dump(post, default_flow_style=False, explicit_start=True))
+			postfile.write(yaml.safe_dump(post, default_flow_style=False, explicit_start=True))
 			postfile.write("---\n\n")
 			postfile.write(content)
 		utime(postfile_path, (atime, mtime))
