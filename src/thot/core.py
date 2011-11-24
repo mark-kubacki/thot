@@ -39,7 +39,8 @@ class Page(dict):
     def dont_render(self, now):
         "True if the page shall be excluded from being rendered."
         # skip drafts
-        if self['status'] == 'draft':
+        if self['status'] == 'draft' \
+           or ('published' in self and not self['published']):
             logging.debug('skipping %s (draft)', self)
             return True
         # skip pages with a date that is in the future

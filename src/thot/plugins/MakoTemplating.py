@@ -10,7 +10,8 @@ __all__ = [
 ]
 
 class MakoTemplate(object):
-    default_template = 'default.mak'
+    # can be overriden in settings
+    default_template = 'post.mak'
 
     def __init__(self, settings):
         self.settings = settings
@@ -52,4 +53,3 @@ class MakoTemplate(object):
         except TopLevelLookupException, e:
             raise TemplateException(e.message)
         return self._render(template, **kwargs)
-

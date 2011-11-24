@@ -88,7 +88,7 @@ def main():
                 'template_dir': join(project_dir, '_templates'),
                 'lib_dir': join(project_dir, '_lib'),
                 'url_path': join(project_dir, '_lib', 'urls.py'),
-                'settings_path': join(project_dir, '_lib', 'settings.cfg'),
+                'settings_path': join(project_dir, '_config.yml'),
                 'hardlinks': options.hardlinks,
                 'make_compressed_copy': options.gzip,
                 'compress_if_ending': GZIP_ENDINGS,
