@@ -92,6 +92,33 @@ class MathDirective(Directive):
             ret.insert(0, tnode)
         return ret
 
+# from pygments.external.rst-directive
+
+class PygmentsDirective(Directive):
+    """ Source code syntax hightlighting.
+    """
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+#    option_spec = dict([(key, directives.flag) for key in VARIANTS])
+    has_content = True
+
+    def run(self):
+        """
+        Parse sourcecode using Pygments
+
+        From http://bitbucket.org/birkenfeld/pygments-main/src/tip/external/rst-directive-old.py
+        """
+        try:
+            lexer = get_lexer_by_name(self.arguments[0])
+        except ValueError:
+            # no lexer found - use the text one instead of an exception
+            lexer = TextLexer()
+        # take an arbitrary option if more than one is given
+        formatter = HtmlFormatter(noclasses=False)
+        parsed = highlight(u'\n'.join(self.content), lexer, formatter)
+        return [nodes.raw('', parsed, format='html')]
+
 
 # original work
 
@@ -159,39 +186,21 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
         self.body.append('</a>')
 
 
+# RST setup
+roles.register_local_role('math', math_role)
+roles.register_local_role('eq', eq_role)
+directives.register_directive('math', MathDirective)
+# if pygments is installed, register the "sourcecode" directive
+if has_pygments:
+    directives.register_directive(
+        'sourcecode', PygmentsDirective)
+
 class RstParser(Parser):
     """ReStructuredText Parser"""
     output_ext = 'html'
     parses = ['rst']
 
-    def pygments_directive(self, name, arguments, options, content, lineno,
-                           content_offset, block_text, state, state_machine):
-        """
-        Parse sourcecode using Pygments
-
-        From http://bitbucket.org/birkenfeld/pygments-main/src/tip/external/rst-directive-old.py
-        """
-        try:
-            lexer = get_lexer_by_name(arguments[0])
-        except ValueError:
-            # no lexer found - use the text one instead of an exception
-            lexer = TextLexer()
-        # take an arbitrary option if more than one is given
-        formatter = HtmlFormatter(noclasses=False)
-        parsed = highlight(u'\n'.join(content), lexer, formatter)
-        return [nodes.raw('', parsed, format='html')]
-    pygments_directive.arguments = (1, 0, 1)
-    pygments_directive.content = 1
-
     def _parse_text(self):
-        # if pygments is installed, register the "sourcecode" directive
-        if has_pygments:
-            directives.register_directive(
-                'sourcecode', self.pygments_directive)
-        roles.register_local_role('math', math_role)
-        roles.register_local_role('eq', eq_role)
-        directives.register_directive(
-            'math', MathDirective)
         self.text = publish_parts(source=self.text,
                                   settings_overrides={
                                         "doctitle_xform": False,
