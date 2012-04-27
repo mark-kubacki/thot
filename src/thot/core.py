@@ -220,7 +220,7 @@ class Site(object):
                 template = page['template']
 
             try:
-                logging.debug('About to render "%s".', output_path)
+                logging.debug('About to render "%s".', output_path.decode('utf-8'))
                 params = page['params'] if 'params' in page else {}
                 rendered = render_func(template,
                                        page=page,
@@ -235,7 +235,7 @@ class Site(object):
                 continue
 
             # write to filesystem
-            logging.debug("writing %s to %s", page['path'], output_path)
+            logging.debug("writing %s to %s", page['path'], output_path.decode('utf-8'))
             with codecs.open(output_path, 'w', 'utf-8') as f:
                 f.write(rendered)
             page_dt_for_fs = page['date'].astimezone(self.settings['build_tz'])
@@ -250,7 +250,7 @@ class Site(object):
                 utime(gz_output_path, (atime, mtime))
 
     def _copy_static_file(self, static_file, dst):
-        logging.debug('copying %s to %s', static_file, dst)
+        logging.debug('copying %s to %s', static_file.decode('utf-8'), dst.decode('utf-8'))
         if copy_file(static_file, dst, self.settings['hardlinks']) \
            and self.settings['make_compressed_copy']:
             for ending in self.settings['compress_if_ending']:

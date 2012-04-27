@@ -15,6 +15,18 @@ from thot import version
 from thot.core import Site, FilesystemSource
 from thot.template import get_templating_cls
 
+try:
+    import curses
+    from anzu.options import _LogFormatter
+    has_logformatter = True
+except:
+    try:
+        import curses
+        from tornado.options import _LogFormatter
+        has_logformatter = True
+    except:
+        has_logformatter = False
+
 LOGGING_LEVELS = {'info': logging.INFO, 'debug': logging.DEBUG}
 GZIP_ENDINGS = [
     '.css', '.js', '.xml', '.txt', '.sh', '.svg',
@@ -99,9 +111,24 @@ def main():
 
     # configure logging
     logging_level = LOGGING_LEVELS.get(options.logging, logging.INFO)
-    logging.basicConfig(level=logging_level,
-                        format='%(asctime)s %(levelname)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    if has_logformatter:
+        color = False
+        if sys.stderr.isatty():
+            try:
+                curses.setupterm()
+                if curses.tigetnum('colors') > 0:
+                    color = True
+            except:
+                pass
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging_level)
+        channel = logging.StreamHandler()
+        channel.setFormatter(_LogFormatter(color=color))
+        root_logger.addHandler(channel)
+    else:
+        logging.basicConfig(level=logging_level,
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S')
 
     # quickstart
     if options.quickstart:
