@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 W-Mark Kubacki
+# Copyright 2011-2012 W-Mark Kubacki
 #
 # Licensed under the Reciprocal Public License, Version 1.5 (the "License");
 # you may not use this file except in compliance with the License. You may
@@ -14,6 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-__version__ = "0.9.3"
+__version__ = "1.0.0"
 version = __version__
-version_info = (0, 9, 3)
+version_info = (1, 0, 0)

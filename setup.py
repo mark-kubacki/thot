@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 W-Mark Kubacki
+# Copyright 2011-2012 W-Mark Kubacki
 #
 # Licensed under the Reciprocal Public License, Version 1.5 (the "License");
 # you may not use this file except in compliance with the License. You may
@@ -46,7 +46,7 @@ setup(
     name = 'thot',
     version = thot_mod.__version__,
     url = 'http://github.com/wmark/thot',
-    download_url = 'http://github.com/downloads/wmark/thot/thot-%s.tbz2' % thot_mod.__version__,
+    download_url = 'http://github.com/downloads/wmark/thot/thot-%s.tar.gz' % thot_mod.__version__,
     license = 'http://www.opensource.org/licenses/rpl1.5',
     description = 'A Python-Powered Static Site Generator',
     author = 'W-Mark Kubacki, Arthur Koziel',
