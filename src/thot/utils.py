@@ -1,15 +1,30 @@
-from fnmatch import fnmatch
-from _abcoll import MutableMapping
-from weakref import proxy as _proxy
 import os
 import shutil
 import hashlib
+import base64
+import codecs
+import logging
+import mimetypes
+
+from fnmatch import fnmatch
+from _abcoll import MutableMapping
+from weakref import proxy as _proxy
+from glob import glob
+from tempfile import mkstemp, gettempdir
+from subprocess import Popen, PIPE
 
 try:
     import murmur
     has_murmur = True
 except:
     has_murmur = False
+
+__all__ = [
+    'ordinal_suffix', 'datetimeformat', 'walk_ignore', 'get_hash_from_path',
+    'equivalent_files', 'copy_file',
+    'OrderedDict',
+    'render_latex_to_image', 'embed_image',
+]
 
 def ordinal_suffix(day):
     """
@@ -254,3 +269,84 @@ class OrderedDict(dict, MutableMapping):
             return len(self)==len(other) and \
                    all(_imap(_eq, self.iteritems(), other.iteritems()))
         return dict.__eq__(self, other)
+
+
+################################################################################
+### output- and format-related helper
+################################################################################
+
+DOC_HEAD = r'''
+\documentclass[12pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{bm}
+\pagestyle{empty}
+'''
+
+DOC_BODY = r'''
+\begin{document}
+%s
+\end{document}
+'''
+
+def render_latex_to_image(math):
+    """
+    Renders the given formula (in LaTeX markup) to an image.
+    """
+    # generate an input file
+    latex = DOC_HEAD + DOC_BODY % math
+    latex_fd, latex_filename = mkstemp(suffix='.tex')
+    with codecs.open(latex_filename, 'w', 'utf-8') as latex_file:
+        latex_file.write(latex)
+
+    # call latex and friends
+    latex_cmdline = [
+        'latex', '--interaction=nonstopmode', latex_filename
+    ]
+    dvipng_cmdline = [
+        'dvipng',
+        '-o', latex_filename.replace('.tex', '.png'),
+        '-T', 'tight',
+        '-bg', 'Transparent',
+        '-z9',
+        latex_filename.replace('.tex', '.dvi')
+    ]
+
+    curdir = os.getcwd()
+    os.chdir(gettempdir())
+
+    try:
+        for cmdline, cmdref in [(latex_cmdline, 'LaTeX'), (dvipng_cmdline, 'dvipng')]:
+            try:
+                p = Popen(cmdline, stdout=PIPE, stderr=PIPE)
+            except OSError, err:
+                if err.errno != ENOENT: # no such file or directory
+                    raise
+                logging.error('%s command cannot be run, but is needed for math markup.', cmdref)
+                return None
+
+            stdout, stderr = p.communicate()
+            if p.returncode != 0:
+                logging.error('%s command exited with error: \n[stderr]\n%s\n[stdout]\n%s',
+                              cmdref, stderr, stdout)
+                return None
+    finally:
+        # now we have a bunch of files, of which we have to delete all but the PNG
+        for filename in glob(latex_filename[0:-4] + '*'):
+            if not filename.endswith('.png'):
+                os.remove(filename)
+        os.chdir(curdir)
+
+    # return the path of the PNG
+    return latex_filename.replace('.tex', '.png')
+
+def embed_image(image_path):
+    """
+    Returns a Data URI string of the image for embedding in HTML or CSS.
+    """
+    mimetype = mimetypes.guess_type(image_path)[0]
+    b64img = base64.encodestring(open(image_path, 'rb').read()).replace("\n", "")
+    return "".join(['data:', mimetype, ';base64,', b64img])

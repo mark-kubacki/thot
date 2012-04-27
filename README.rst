@@ -135,6 +135,13 @@ one plugin as implementation example for every entry point.
 
 If you have a good idea for new plugins and need additional hooks for it, let me know!
 
+Thot can take advantage of...
+------------------------------
+
+- LaTeX for math rendering. Needs `dvipng`.
+  Enables RST directives `math` for formulas (with optional attribute `label`)
+  and `eq` for linking to labelled formulas.
+
 -- Mark
 
 .. [1] A page is being "published" when it is written to `_output` directory.
