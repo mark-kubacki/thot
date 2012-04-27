@@ -37,6 +37,9 @@ class Parser(object):
         if not self.headers:
             self._split_input()
             self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
+            if 'mtime' in self.headers:
+                logging.warn('File "%s" overwrites property "mtime" - which leads to caching errors with proxies and browsers.',
+                             self.filename)
             for key in self.headers:
                 value = self.headers[key]
                 if value:

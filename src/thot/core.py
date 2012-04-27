@@ -238,7 +238,7 @@ class Site(object):
             logging.debug("writing %s to %s", page['path'], output_path.decode('utf-8'))
             with codecs.open(output_path, 'w', 'utf-8') as f:
                 f.write(rendered)
-            page_dt_for_fs = page['date'].astimezone(self.settings['build_tz'])
+            page_dt_for_fs = page['mtime'].astimezone(self.settings['build_tz'])
             atime = mtime = int(time.mktime(page_dt_for_fs.timetuple()))
             utime(output_path, (atime, mtime))
 
@@ -378,6 +378,7 @@ class FilesystemSource(object):
         `date` - set to mtime. This is the time of the most recent
                  content change. If mtime cannot be accessed (due
                  to permissions), the current time is used.
+        `mdate` - same as `date`, only that it should not be overwritten
         `status` - set to 'live'
         `template` - set to 'default.html'
         `url` - set to "default" rule
@@ -400,6 +401,6 @@ class FilesystemSource(object):
         date = date.astimezone(self.build_tz)
         template = self.default_template
         return dict(path=relpath(path, self.project_dir),
-                    title=title, date=date, status='live',
+                    title=title, date=date, mtime=date, status='live',
                     slug=slug, template=template, url='default',
                     output_ext=output_ext)
