@@ -25,6 +25,9 @@ For templating you can resort to Mako_ or Jinja2_.
 Still not what you're looking for? You can replace almost everything by your own
 plugins. ;-)
 
+Need an example? This is a blog powered by Thot:
+http://tsu.sarumindustries.de/2011/12/15-durchs-Lowsec-fliegen-oder-per-Blackops-Portal-springen.html
+
 License
 ========
 Licensed under the Reciprocal Public License, Version 1.5
@@ -71,7 +74,7 @@ example.
 the file extension. Although the content will be subject to rendering by the templating
 engine of your choice, you are free to abstain from using it.
 
-You can find your default timezone and other settings in `_lib/settings.cfg`, which is
+You can find your default timezone and other settings in `_config.yml`, which is
 parsed as *YAML*.
 
 .. _YAML: http://yaml.org/spec/1.1/
