@@ -1,26 +1,31 @@
 status: hidden
 template: self
 
-<?xml version="1.0" encoding="utf-8"?>
+<%
+from pytz import UTC
+%><?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <title>${ settings['author']['name'] }</title>
     <link href="${ settings['website_url'] }/atom.xml" rel="self" />
     <link href="${ settings['website_url'] }" />
-    <updated>${ settings['build_time'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
-    <id>${ settings['website_url'] }</id>
+    <updated>${ settings['build_time'].astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
+    <id>"${ settings['website_url'] }"</id>
     <author>
         <name>${ settings['author']['name'] }</name>
         <email>${ settings['author']['email'] }</email>
     </author>
 
-    % for item in pages:
-    <entry>
-        <title><![CDATA[${ item['title'] }]]></title>
+    % for item in pages[:10]:
+    <entry xml:base="${ settings['website_url'] }/${ '/'.join(item['url'].split('/')[0:-1]) }/">
+        <title>${ item['title'] }</title>
         <link href="${ settings['website_url'] }/${ item['url'] }" />
-        <updated>${ item['date'] | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
-        <id>${ settings['website_url'] }/${ item['url'] }</id>
+        <published>${ item['date'].astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</published>
+        % if item['date'] != item['mtime']:
+        <updated>${ item['mtime'].astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</updated>
+        % endif
+        <id>"${ settings['website_url'] }/${ item['url'] }"</id>
         <content type="html"><![CDATA[${ item['content'] }]]></content>
     </entry>
-    <% if page['date'] < item['date']: page['date'] = item['date'] %>
+    <% if page['mtime'] < item['mtime']: page['mtime'] = page['date'] = item['mtime'] %>
     % endfor
 </feed>
