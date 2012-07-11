@@ -1,0 +1,61 @@
+status: hidden
+template: self
+
+<%
+from datetime import timedelta, datetime
+
+from pytz import UTC
+
+changefreq_classification = (
+  ('hourly',	timedelta(hours=+2)),
+  ('daily',	timedelta(days=+2)),
+  ('weekly',	timedelta(weeks=+2)),
+  ('monthly',	timedelta(weeks=+7)),
+  ('yearly',	timedelta(weeks=+52, days=+3)),
+)
+
+today = settings['build_time']
+
+def changefreq(given_page):
+  first_change_after = abs(given_page['mtime'] - given_page['date'])
+  last_change_ago = today - given_page['mtime']
+
+  if first_change_after <= timedelta():
+    estimation = last_change_ago
+  else:
+    estimation = (first_change_after + 2*last_change_ago)/3
+
+  for classification, interval in changefreq_classification:
+    if estimation <= interval:
+      return classification
+  else:
+    return 'never'
+
+%><?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+## root page and atom.xml are exceptions regarding 'lastmod'
+<%
+root_changed = page['mtime']
+for item in pages:
+  if root_changed < item['mtime']:
+    root_changed = item['mtime']
+
+%>	<url>
+		<loc>${ settings['website_url'] }/index.html</loc>
+		<lastmod>${ root_changed.astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</lastmod>
+		<changefreq>${ changefreq({'date': root_changed, 'mtime': root_changed}) }</changefreq>
+	</url>
+	<url>
+		<loc>${ settings['website_url'] }/atom.xml</loc>
+		<lastmod>${ root_changed.astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</lastmod>
+		<changefreq>${ changefreq({'date': root_changed, 'mtime': root_changed}) }</changefreq>
+	</url>
+% for item in pages:
+	<url>
+		<loc>${ settings['website_url'] }/${ item['url'] }</loc>
+		<lastmod>${ item['mtime'].astimezone(UTC) | n,datetimeformat("%Y-%m-%dT%H:%M:%SZ") }</lastmod>
+		<changefreq>${ changefreq(item) }</changefreq>
+	</url><%
+	if page['mtime'] < item['mtime']: page['mtime'] = page['date'] = item['mtime'] %>
+% endfor
+</urlset>
