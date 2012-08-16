@@ -154,7 +154,7 @@ class Site(object):
                 for proc in self.processors_for('before_page_parsing'):
                     proc.before_page_parsing(page)
 
-                # rendering of the actual content
+                # parsing of the actual content
                 try:
                     page.parse()
                 except parser.ParserException as parser_error:
@@ -197,19 +197,16 @@ class Site(object):
             output_path = url
         return join(self.settings['output_dir'], output_path)
 
-    def _write(self):
-        "Writes the parsed data to the filesystem"
+    def _render_pages(self):
         public_pages = [page for page in self.pages if page.is_public]
         templating_engine = get_templating_cls(self.settings['templating_engine'])
         template_cls = templating_engine(self.settings)
-        for page in self.pages:
-            output_path = self._get_output_path(page['url'])
 
-            # create the directories for the page
-            try:
-                makedirs(dirname(output_path))
-            except OSError:
-                pass
+        for page in self.pages:
+            if 'rendered' in page:
+                logging.warning('Page %s has already been rendered, skipping', page)
+                continue
+            page['output_path'] = self._get_output_path(page['url'])
 
             # render template
             if page['template'] == 'self':
@@ -220,24 +217,35 @@ class Site(object):
                 template = page['template']
 
             try:
-                logging.debug('About to render "%s".', output_path.decode('utf-8'))
+                logging.debug('About to render "%s".', page['output_path'].decode('utf-8'))
                 params = page['params'] if 'params' in page else {}
-                rendered = render_func(template,
+                page['rendered'] = render_func(template,
                                        page=page,
                                        pages=public_pages,
                                        settings=self.settings,
                                        thot_version=thot_version,
                                        **params)
-                assert type(rendered) == types.UnicodeType
+                assert type(page['rendered']) == types.UnicodeType
             except TemplateException as error:
                 logging.error(error)
                 logging.error('skipping article "%s"', page['path'])
                 continue
 
+    def _write(self):
+        "Writes the parsed data to the filesystem"
+        for page in self.pages:
+            output_path = page['output_path']
+
+            # create the directories for the page
+            try:
+                makedirs(dirname(output_path))
+            except OSError:
+                pass
+
             # write to filesystem
             logging.debug("writing %s to %s", page['path'], output_path.decode('utf-8'))
             with codecs.open(output_path, 'w', 'utf-8') as f:
-                f.write(rendered)
+                f.write(page['rendered'])
             page_dt_for_fs = page['mtime'].astimezone(self.settings['build_tz'])
             atime = mtime = int(time.mktime(page_dt_for_fs.timetuple()))
             utime(output_path, (atime, mtime))
@@ -246,7 +254,7 @@ class Site(object):
             if self.settings['make_compressed_copy']:
                 gz_output_path = output_path+'.gz'
                 with gzip.GzipFile(gz_output_path, 'w', mtime=mtime) as f:
-                    f.write(rendered.encode('utf-8'))
+                    f.write(page['rendered'].encode('utf-8'))
                 utime(gz_output_path, (atime, mtime))
 
     def _copy_static_file(self, static_file, dst):
@@ -286,6 +294,7 @@ class Site(object):
         logging.debug("input data %s", input_data)
         self._parse(input_data)
         self._sort()
+        self._render_pages()
         self._delete_output_dir()
         self._write()
         self._copy_static_files()
