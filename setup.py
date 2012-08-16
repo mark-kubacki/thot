@@ -93,7 +93,7 @@ setup(
     install_requires = [
         'markdown',
         'docutils',
-        'python-dateutil==1.5',
+        'python-dateutil',
         'pytz',
         'PyYAML',
     ] + one_supported_templating_engine(),
