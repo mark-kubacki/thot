@@ -3,6 +3,7 @@ import shutil
 import hashlib
 import base64
 import codecs
+import errno
 import logging
 import mimetypes
 
@@ -323,7 +324,7 @@ def render_latex_to_image(math):
             try:
                 p = Popen(cmdline, stdout=PIPE, stderr=PIPE)
             except OSError, err:
-                if err.errno != ENOENT: # no such file or directory
+                if err.errno != errno.ENOENT: # no such file or directory
                     raise
                 logging.error('%s command cannot be run, but is needed for math markup.', cmdref)
                 return None
