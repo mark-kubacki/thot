@@ -1,5 +1,6 @@
 import types
 import logging
+from operator import itemgetter
 
 __all__ = ['PageTags', 'PageCategory']
 
@@ -24,7 +25,7 @@ def add_to_keyed_list(key, collection, page, none_is_key=None):
 class PageTags(object):
     """
     Mapper of pages to tags.
-    
+
     This plugin does two things:
      1. reads the tags from the pages
      2. injects new parametrized output pages
@@ -90,6 +91,9 @@ class PageTags(object):
 
         # inject it multiple times, parametrized
         for field_value in self.collection:
+            # sort the collection
+            self.collection[field_value].sort(key=itemgetter('date', 'url'), reverse=True)
+            # index pages
             p = index_page.copy()
             params = dict(field=self.field,
                           field_value=field_value,
@@ -107,4 +111,3 @@ class PageCategory(PageTags):
 
     field = 'category'
     none_is_key = 'Uncategorized'
-

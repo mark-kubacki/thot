@@ -3,6 +3,7 @@ from datetime import datetime
 import imp
 import logging
 import types
+from operator import itemgetter
 from os import makedirs, utime
 from os.path import splitext, join, dirname, split, getmtime, \
                     basename, exists, relpath, isabs, isfile
@@ -175,7 +176,7 @@ class Site(object):
 
     def _sort(self):
         "Sort pages by date (newest first)"
-        self.pages.sort(key=lambda p: p['date'], reverse=True)
+        self.pages.sort(key=itemgetter('date', 'url'), reverse=True)
 
     def _delete_output_dir(self):
         "Deletes the output directory"
