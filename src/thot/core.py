@@ -313,11 +313,12 @@ class FilesystemSource(object):
     ... and not a database, for example.
     """
 
-    def __init__(self, project_dir, build_time, build_tz, default_template):
+    def __init__(self, project_dir, build_time, build_tz, default_template, page_defaults):
         self.project_dir = project_dir
         self.build_time = build_time
         self.build_tz = build_tz
         self.default_template = default_template
+        self.page_defaults = page_defaults
 
     def set_urlfunc(self, urlfunc):
         self.get_url = urlfunc
@@ -372,6 +373,7 @@ class FilesystemSource(object):
 
     def _create_page(self, path, static_files):
         page = Page(db=self, get_url=self.get_url, static_files=static_files)
+        page.update(self.page_defaults.copy())
         page.update(self._get_default_headers(path))
         return page
 

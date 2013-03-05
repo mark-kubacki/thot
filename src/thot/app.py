@@ -48,13 +48,17 @@ def quickstart(settings):
         if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
         timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
                              + "'UTC' or something other: ")
+    language_default = 'de'
+    language = raw_input("Default language tag (de, en_US, en_GB...) [%s]: " % language_default) \
+               or language_default
     config = {'thot': {
-        'author': {'name': author_name,
-                   'email': author_email},
         'website_url': website_url,
         'timezone': timezone,
         'templating_engine': settings['templating_engine'],
         'source': settings['source'],
+        'author': {'name': author_name,
+                   'email': author_email},
+        'page_defaults': {'language': language},
     }}
 
     # copy quickstart template
@@ -166,7 +170,8 @@ def main():
     source = source_cls(settings['project_dir'], settings['build_time'],
                 settings['timezone'],
                 settings['default_template'] if 'default_template' in settings \
-                else get_templating_cls(settings['templating_engine']).default_template)
+                else get_templating_cls(settings['templating_engine']).default_template,
+                settings['page_defaults'] if 'page_defaults' in settings else dict())
     site = Site(settings, source)
 
     if True:

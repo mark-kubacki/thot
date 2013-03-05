@@ -1,5 +1,6 @@
 title: Hello World
 template: post.mak
+language: la
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum viverra quam ultricies enim sodales vitae tempor nulla elementum. Morbi sed turpis ac nibh vestibulum vestibulum. Proin leo orci, rutrum eu consectetur id, ullamcorper eu urna. Aliquam erat volutpat. Proin cursus ligula lacus. Quisque in facilisis ipsum. Duis neque eros, tincidunt eu sodales sit amet, interdum a est. Integer et ligula velit, sed consequat lectus. Suspendisse dui erat, vulputate blandit pharetra sed, luctus sed eros. Donec ac augue ut ipsum semper consequat ac sed lacus.
 
@@ -9,4 +10,4 @@ Nunc mollis bibendum auctor. Quisque rhoncus euismod nibh id facilisis. Donec ar
 
 Vestibulum convallis bibendum turpis vitae scelerisque. Phasellus rutrum tincidunt ante eleifend interdum. Donec urna lacus, sagittis id gravida eu, pretium in leo. Cras aliquam tempus urna, sit amet mattis dui interdum quis. Curabitur justo nisi, elementum ut auctor sit amet, fringilla eu metus. Nam sed consectetur magna. Aliquam semper sem a metus vehicula placerat. Sed at dolor metus, sit amet hendrerit lectus. In vulputate dictum sapien eu sollicitudin. Sed eget lacus neque, in interdum orci. Donec augue nisl, gravida eget luctus eu, cursus sit amet sapien.
 
-Nam suscipit ante turpis. Integer at dui id diam congue molestie quis et quam. Duis nec faucibus odio. Sed dignissim enim eget sem molestie accumsan. Suspendisse potenti. Maecenas a rhoncus mauris. Duis dictum nulla felis. Morbi tristique dui sed lorem scelerisque tincidunt. Ut at nisl justo. Etiam imperdiet aliquet consectetur. Cras fringilla dictum urna non posuere. In sagittis congue dignissim. 
+Nam suscipit ante turpis. Integer at dui id diam congue molestie quis et quam. Duis nec faucibus odio. Sed dignissim enim eget sem molestie accumsan. Suspendisse potenti. Maecenas a rhoncus mauris. Duis dictum nulla felis. Morbi tristique dui sed lorem scelerisque tincidunt. Ut at nisl justo. Etiam imperdiet aliquet consectetur. Cras fringilla dictum urna non posuere. In sagittis congue dignissim.
