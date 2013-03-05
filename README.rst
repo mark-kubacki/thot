@@ -141,7 +141,7 @@ If you have a good idea for new plugins and need additional hooks for it, let me
 Thot can take advantage of...
 ------------------------------
 
-- LaTeX for math rendering. Needs `dvipng`.
+- LaTeX for math rendering. Needs `dvipng` and `utf8x` (Gentoo: *dev-texlive/texlive-latexextra*).
   Enables RST directives `math` for formulas (with optional attribute `label`)
   and `eq` for linking to labelled formulas.
 
