@@ -85,6 +85,7 @@ setup(
             'tags = thot.plugins.Tagging:PageTags',
             'category = thot.plugins.Tagging:PageCategory',
             'comments_from_files = thot.plugins.Comments:CommentsFromFile',
+            'html = thot.plugins.HtmlPostProcessing:HtmlPostProcessor',
         ],
         'thot.sources': [
             'filesystem = thot.core:FilesystemSource',

@@ -22,7 +22,7 @@ except:
 
 __all__ = [
     'ordinal_suffix', 'datetimeformat', 'walk_ignore', 'get_hash_from_path',
-    'equivalent_files', 'copy_file',
+    'equivalent_files', 'copy_file', 'partition',
     'OrderedDict',
     'render_latex_to_image', 'embed_image',
 ]
@@ -122,6 +122,14 @@ def copy_file(src, dst, hardlinks=False):
     except IOError:
         logging.debug("Caught IOError when copying '%s'->'%s'.", src, dst)
         pass
+
+def partition(alist, indices):
+    """Splits at the given indices.
+
+    >>> partition('crocodile', [4, 5])
+    ['croc', 'o', 'dile']
+    """
+    return [alist[i:j] for i, j in zip([0]+indices, indices+[None])]
 
 ################################################################################
 ### OrderedDict

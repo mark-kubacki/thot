@@ -232,6 +232,9 @@ class Site(object):
                 logging.error('skipping article "%s"', page['path'])
                 continue
 
+            for proc in self.processors_for('after_rendering'):
+                proc.after_rendering(page)
+
     def _write(self):
         "Writes the parsed data to the filesystem"
         for page in self.pages:

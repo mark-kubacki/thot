@@ -145,6 +145,8 @@ Thot can take advantage of...
   Enables RST directives `math` for formulas (with optional attribute `label`)
   and `eq` for linking to labelled formulas.
 
+- `Pyphen` and `Wordaxe` for server-side hyphenation.
+
 -- Mark
 
 .. [1] A page is being "published" when it is written to `_output` directory.
