@@ -44,17 +44,17 @@ Usage
 
 Quickstart
 ------------
-Run ```thot --quickstart mysite``` to have directory “`mysite`” created with a basic site
+Run ``thot --quickstart mysite`` to have directory “`mysite`” created with a basic site
 skeleton. You will be asked a series of questions regarding default values for author’s name
-and such by that script. Your answers will result in file ```_lib/settings.cfg```.
+and such by that script. Your answers will result in file ``_lib/settings.cfg``.
 
-`quickstart` obeys the optional parameter `-t <shortname>`, with “shortname” being
+``quickstart`` obeys the optional parameter `-t <shortname>`, with “shortname” being
 the shortname for a recognized templating engine: `mako` or `jinja2`, Mako being preferred.
 
-Run `thot` to generate a site. The command looks for files with a .htm/.html, .xml, .rst
-and .md/.markdown extension, parses them and passes the results to your template(s).
+Run ``thot`` to generate a site. The command looks for files with extensions .htm/.html,
+.xml, .rst and .md/.markdown; parses them and passes the results to your template(s).
 — “Parsing” means transforming the markup (for example Markdown or RST) to HTML. —
-Directories and files that start with a dot or an underscore will be ignored and
+Directories and files that start with a dot or an underscore will be ignored,
 everything else (i.e. images) will be copied. The the results will be available
 in “`_output`”.
 
@@ -109,14 +109,14 @@ date
   sparing you the embarrassment of leaking something prematurely. (Like a Fortune 500
   company once did, announcing a product on their homepage before their CEO held the presentation. Ouch.)
   Your (default) timezone is taken into account.
-  Format is ISO-8691, ```yyyy-MM-dd``` such as in ```2011-09-07``` or ```yyyy-MM-dd HH:mm:ss```.
+  Format is ISO-8691, ``yyyy-MM-dd`` such as in ``2011-09-07`` or ``yyyy-MM-dd HH:mm:ss``.
 
 timezone
   Set this if you want to overwrite your default timezone for that page.
   Must be anything pytz_ recognizes, for example “UTC” or “Europe/Berlin”.
   Makes only sense if `date` header is set, though, and has an effect on the
   publishing date and RSS/Atom feed, where timezones are added to date-times.
-  Globetrotter will like it — but if in doubt skip this entry.
+  Globetrotters will like it — but if in doubt skip this entry.
 
 expires
   If set, *Thot* will skip that page after the given date (and optionally, time)
@@ -168,11 +168,11 @@ If you have a good idea for new plugins and need additional hooks for it, let me
 Thot can take advantage of...
 ------------------------------
 
-- LaTeX for math rendering. Needs “`dvipng`” and “`utf8x`”
-  (called *dev-texlive/texlive-latexextra* in Gentoo and ChromeOS).
+- LaTeX for math rendering. Needs **dvipng** and “`utf8x`”
+  (from *dev-texlive/texlive-latexextra* in Gentoo and ChromeOS).
   Enables RST directives “`math`” for formulas (with optional attribute “`label`”)
   and “`eq`” for linking to labelled formulas.
-- `Pyphen` and `Wordaxe` for server-side hyphenation.
+- **Pyphen** and **Wordaxe** for server-side hyphenation.
 
 — Mark
 
