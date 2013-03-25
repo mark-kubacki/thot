@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from codecs import open
 from imp import load_source
 from os import walk
 from os.path import join, dirname, abspath
@@ -31,26 +32,50 @@ def find_data_files(path, prefix):
 
 def one_supported_templating_engine():
     try:
-        import mako
-        return []
-    except ImportError:
-        pass
-    try:
         import jinja2
         return []
     except ImportError:
         pass
     return ['Mako >= 0.4.0']
 
+def one_hyphenation_module():
+    try: # from SF
+        import wordaxe
+        return ['wordaxe >= 1.0.1']
+    except ImportError:
+        pass
+    return ['pyphen >= 0.7']
+
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'Environment :: Web Environment',
+    'License :: OSI Approved :: Reciprocal Public License',
+    'Programming Language :: Python :: 2.5',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: Stackless',
+    'Topic :: Internet :: WWW/HTTP',
+    'Topic :: Text Processing',
+    'Topic :: Text Processing :: Markup :: HTML',
+    'Topic :: Text Processing :: Markup :: LaTeX',
+    'Topic :: Text Processing :: Markup :: XML',
+]
+
 setup(
     name = 'thot',
     version = thot_mod.__version__,
     url = 'http://github.com/wmark/thot',
-    download_url = 'http://github.com/downloads/wmark/thot/thot-%s.tar.gz' % thot_mod.__version__,
+    download_url = 'http://binhost.ossdl.de/distfiles/thot-%s.tar.gz' % thot_mod.__version__,
     license = 'http://www.opensource.org/licenses/rpl1.5',
     description = 'A Python-Powered Static Site Generator',
     author = 'W-Mark Kubacki, Arthur Koziel',
     author_email = 'wmark+thot@hurrikane.de',
+    long_description=open(
+        join(dirname(__file__), 'README.rst'),
+        'r', encoding='utf-8',
+    ).read(),
 
     packages = find_packages('src'),
     package_dir = {'': 'src'},
@@ -97,5 +122,7 @@ setup(
         'python-dateutil',
         'pytz',
         'PyYAML',
-    ] + one_supported_templating_engine(),
+    ] + one_supported_templating_engine() \
+    + one_hyphenation_module(),
+    classifiers=classifiers,
 )
