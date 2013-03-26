@@ -7,7 +7,7 @@ from docutils.parsers.rst import directives, roles, Directive
 from docutils.writers import html4css1
 
 from thot.parser import Parser
-from thot.utils import render_latex_to_image, embed_image
+from thot.utils import supported_image_formats, default_image_format, render_latex_to_image, embed_image
 
 __all__ = [
     'RstParser',
@@ -44,7 +44,10 @@ class eqref(nodes.Inline, nodes.TextElement):
 
 def math_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
     latex = utils.unescape(text, restore_backslashes=True)
-    return [math(latex=latex)], []
+    return [math(
+        latex=latex,
+        image_format=options['image_format'] if 'image_format' in options else default_image_format
+        )], []
 
 def eq_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
     text = utils.unescape(text)
@@ -60,12 +63,13 @@ class MathDirective(Directive):
 
     has_content = True
     required_arguments = 0
-    optional_arguments = 1
+    optional_arguments = 3
     final_argument_whitespace = True
     option_spec = {
         'label': directives.unchanged,
         'name': directives.unchanged,
         'nowrap': directives.flag,
+        'image_format': lambda arg: directives.choice(arg, supported_image_formats),
     }
 
     def run(self):
@@ -78,6 +82,8 @@ class MathDirective(Directive):
         if node['label'] is None:
             node['label'] = self.options.get('label', None)
         node['nowrap'] = 'nowrap' in self.options
+        node['image_format'] = self.options.get('image_format', default_image_format)
+
         try:
             node['docname'] = self.state.document.settings.env.docname
         except:
@@ -142,8 +148,8 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
                 ret.append('\\begin{split}%s\\end{split}\\notag' % part)
         return '\\begin{gather}\n' + '\\\\'.join(ret) + '\n\\end{gather}'
 
-    def _render_math(self, latex, alt_text=None):
-        png_path = render_latex_to_image(latex)
+    def _render_math(self, latex, alt_text=None, image_format=None):
+        png_path = render_latex_to_image(latex, image_format)
         if png_path:
             embedded_image = embed_image(png_path)
             os.remove(png_path)
@@ -159,7 +165,7 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
             return None
 
     def visit_math(self, node):
-        elem = self._render_math('$' + node['latex'] + '$', node['latex'])
+        elem = self._render_math('$' + node['latex'] + '$', node['latex'], node['image_format'])
         if elem:
             self.body.append(elem)
         raise nodes.SkipNode
@@ -169,7 +175,7 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
             latex = node['latex']
         else:
             latex = self._wrap_displaymath(node['latex'])
-        elem = self._render_math(latex, node['latex'])
+        elem = self._render_math(latex, node['latex'], node['image_format'])
         if elem:
             self.body.append(self.starttag(node, 'div', CLASS='math'))
             self.body.append('<p>')

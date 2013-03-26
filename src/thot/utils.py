@@ -24,7 +24,7 @@ __all__ = [
     'ordinal_suffix', 'datetimeformat', 'walk_ignore', 'get_hash_from_path',
     'equivalent_files', 'copy_file', 'partition',
     'OrderedDict',
-    'render_latex_to_image', 'embed_image',
+    'supported_image_formats', 'default_image_format', 'render_latex_to_image', 'embed_image',
 ]
 
 def ordinal_suffix(day):
@@ -301,9 +301,16 @@ DOC_BODY = r'''
 \end{document}
 '''
 
-def render_latex_to_image(math):
+supported_image_formats = ('svg', 'png')
+default_image_format = 'png'
+def render_latex_to_image(math, image_format='png'):
     """
     Renders the given formula (in LaTeX markup) to an image.
+
+    - format png requires dvipng
+    - format svg needs dvisvgm
+
+    @param image_format can be any of: svg, png
     """
     # generate an input file
     latex = DOC_HEAD + DOC_BODY % math
@@ -315,20 +322,25 @@ def render_latex_to_image(math):
     latex_cmdline = [
         'latex', '--interaction=nonstopmode', latex_filename
     ]
-    dvipng_cmdline = [
-        'dvipng',
-        '-o', latex_filename.replace('.tex', '.png'),
-        '-T', 'tight',
-        '-bg', 'Transparent',
-        '-z9',
-        latex_filename.replace('.tex', '.dvi')
-    ]
+    dvi_converter_cmdline = {
+        'png': ['dvipng',
+                '-o', latex_filename.replace('.tex', '.png'),
+                '-T', 'tight',
+                '-bg', 'Transparent',
+                '-z9',
+                latex_filename.replace('.tex', '.dvi'),
+               ],
+        'svg': ['dvisvgm',
+                '--no-styles', '--no-fonts', # or what IE 10 will display is a mess
+                latex_filename.replace('.tex', '.dvi'),
+                ],
+    }
 
     curdir = os.getcwd()
     os.chdir(gettempdir())
 
     try:
-        for cmdline, cmdref in [(latex_cmdline, 'LaTeX'), (dvipng_cmdline, 'dvipng')]:
+        for cmdline, cmdref in [(latex_cmdline, 'LaTeX'), (dvi_converter_cmdline[image_format], 'dvipng')]:
             try:
                 p = Popen(cmdline, stdout=PIPE, stderr=PIPE)
             except OSError, err:
@@ -345,12 +357,12 @@ def render_latex_to_image(math):
     finally:
         # now we have a bunch of files, of which we have to delete all but the PNG
         for filename in glob(latex_filename[0:-4] + '*'):
-            if not filename.endswith('.png'):
+            if not filename.endswith('.'+image_format):
                 os.remove(filename)
         os.chdir(curdir)
 
     # return the path of the PNG
-    return latex_filename.replace('.tex', '.png')
+    return latex_filename.replace('.tex', '.'+image_format)
 
 def embed_image(image_path):
     """

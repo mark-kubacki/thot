@@ -168,9 +168,9 @@ If you have a good idea for new plugins and need additional hooks for it, let me
 Thot can take advantage of...
 ------------------------------
 
-- LaTeX for math rendering. Needs **dvipng** and “`utf8x`”
+- LaTeX for math rendering. Needs **dvipng** for PNG or **dvisvgm** for SVG, and “`utf8x`”
   (from *dev-texlive/texlive-latexextra* in Gentoo and ChromeOS).
-  Enables RST directives “`math`” for formulas (with optional attribute “`label`”)
+  Enables RST directives “`math`” for formulas (with optional directives “`label`” and “`image_format`”)
   and “`eq`” for linking to labelled formulas.
 - **Pyphen** and **Wordaxe** for server-side hyphenation.
 
