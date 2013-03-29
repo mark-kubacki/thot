@@ -123,7 +123,7 @@ class Site(object):
                     else:
                         self.processor_map[step] = [cls_instance, ]
             except Exception, e:
-                logging.debug('Processor "%s" has not been loaded due to: %s',
+                logging.warn('Processor "%s" has not been loaded due to: %s',
                               entrypoint, e)
 
     def processors_for(self, step):
