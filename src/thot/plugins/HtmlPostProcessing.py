@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
-from HTMLParser import HTMLParser
+from lxml import etree
 
 from thot.utils import partition
 
@@ -35,79 +35,7 @@ def wordaxe_hyphenation_wrapper(hyphenator, word):
     marked_word = HtmlHyphenator.html_hypenation_mark.join(partitions)
     return marked_word
 
-class HtmlRebuilder(HTMLParser):
-    """HtmlParser which breaks down HTML, reassembles it immediately
-    and keeps track of the current position in DOM.
-
-    Use this as your superclass to influence the HTML-output.
-    """
-
-    def __init__(self, page, buffer_size):
-        assert buffer_size > 0
-        HTMLParser.__init__(self) # because it is an old-style class
-        self._modified_contents = StringIO(buffer_size)
-        self.tag_path = []
-        self._page = page
-        self._warned_about_tag_mismatch = False
-
-    def handle_starttag(self, tag, attrs):
-        self.tag_path.append(tag)
-        self._store_tag(tag, attrs)
-
-    def handle_endtag(self, tag):
-        got_tag = tag
-        expected_tag = self.tag_path[-1]
-        if got_tag == expected_tag:
-            self.tag_path.pop()
-        else:
-            stripped_path = []
-            if got_tag in self.tag_path:
-                while True:
-                    tmp = self.tag_path.pop()
-                    if tmp != got_tag:
-                        stripped_path.append(tmp)
-                    else:
-                        break
-                stripped_path.reverse()
-
-            if not self._warned_about_tag_mismatch:
-                self._warned_about_tag_mismatch = True
-                logging.warn('Got tail of tag "%s" but have been expecting end of "%s" in "%s"',
-                             got_tag, expected_tag, self._page['output_path'].decode('utf-8'))
-                logging.debug('"%s": starting from %r these tags have been stripped from stack: %r',
-                              self._page['output_path'].decode('utf-8'),
-                              self.tag_path, [got_tag] + stripped_path)
-        self._store_tag(tag, None, prefix='</')
-
-    def handle_startendtag(self, tag, attrs):
-        self._store_tag(tag, attrs, suffix=' />')
-
-    def handle_decl(self, raw):     self._store_tag(raw, None, '<!', '>')
-    def handle_pi(self, raw):       self._store_tag(raw, None, '<?', '>')
-    def unknown_decl(self, raw):    self._store_tag(raw, None, '<![', ']>')
-    def handle_entityref(self, raw):self._store_tag(raw, None, '&', ';')
-    def handle_charref(self, raw):  self._store_tag(raw, None, '&#', ';')
-
-    def handle_comment(self, raw):
-        self._store_tag(raw, None, '<!--', '-->')
-
-    def _store_tag(self, tag, attrs, prefix='<', suffix='>'):
-        self._modified_contents.write(prefix)
-        self._modified_contents.write(tag)
-        if attrs:
-            for k,v in attrs:
-                self._modified_contents.write(' ')
-                self._modified_contents.write(k)
-                self._modified_contents.write('="')
-                self._modified_contents.write(v)
-                self._modified_contents.write('"')
-        self._modified_contents.write(suffix)
-
-    def handle_data(self, data):
-        self._modified_contents.write(data)
-
-
-class HtmlHyphenator(HtmlRebuilder):
+class HtmlHyphenator(object):
     """Hyphenator of text nodes."""
 
     # maps language-code to hyphenation facility
@@ -119,15 +47,35 @@ class HtmlHyphenator(HtmlRebuilder):
     # subsequent functions are able to handle nubers and symbols
     word_detection_pattern = re.compile(r'\w{5,}', re.UNICODE)
 
-    def __init__(self, page, buffer_size):
-        HtmlRebuilder.__init__(self, page, buffer_size)
-        # list of tuples (length of tag_path, language tag)
-        self._language = []
+    @classmethod
+    def get_language(cls, element):
+        if 'lang' in element.attrib:
+            return element.attrib['lang']
+        for ancestor in element.iterancestors():
+            if 'lang' in ancestor.attrib:
+                return ancestor.attrib['lang']
 
-    def transform(self):
-        self.feed(self._page['rendered'])
-        return self._modified_contents.getvalue()
+    @classmethod
+    def transform(self, page):
+        parser = etree.HTMLParser(encoding='utf-8')
+        #dom_tree = etree.parse(StringIO(page['rendered'].encode('utf-8')), parser)
+        dom_tree = etree.fromstring(page['rendered'].encode('utf-8'), parser)
 
+        language_annotated_text = 'body//*[ancestor-or-self::*/@lang and string-length(text()) > 5]'
+        for elem in dom_tree.xpath(language_annotated_text):
+            tag_path = [ancestor.tag for ancestor in elem.iterancestors()]
+            if not HtmlHyphenator.dont_hyphenate_if_in.intersection(tag_path):
+                lang = HtmlHyphenator.get_language(elem)
+
+                if elem.text and not elem.text.isspace():
+                    elem.text = self._hyphenate(elem.text, lang)
+                for child in elem.iterchildren():
+                    if child.tail and not child.tail.isspace():
+                        child.tail = self._hyphenate(child.tail, lang)
+
+        return etree.tostring(dom_tree, xml_declaration=False, encoding="utf-8").decode('utf-8')
+
+    @classmethod
     def _get_hyphenator(self, lang):
         if not lang in HtmlHyphenator.hyphenator_f:
             if has_wordaxe and lang in wordaxe_languages:
@@ -144,41 +92,13 @@ class HtmlHyphenator(HtmlRebuilder):
                 HtmlHyphenator.hyphenator_f[lang] = lambda x: x
         return HtmlHyphenator.hyphenator_f[lang]
 
-    def _hyphenate(self, text):
-        pathlength, lang = self._language[-1]
-        hyphenator = self._get_hyphenator(lang)
+    @classmethod
+    def _hyphenate(self, text, language):
+        hyphenator = self._get_hyphenator(language)
         return HtmlHyphenator.word_detection_pattern.sub(
             lambda matchobj: hyphenator(matchobj.group(0)),
             text,
         )
-
-    def handle_starttag(self, tag, attrs):
-        HtmlRebuilder.handle_starttag(self, tag, attrs)
-
-        if attrs:
-            d = dict(attrs)
-            if 'lang' in d or 'xml:lang' in d:
-                position = len(self.tag_path) # we can do that because it is a stack!
-                language_tag = d['lang'] if 'lang' in d else d['xml:lang']
-                self._language.append((position, language_tag))
-
-    def handle_endtag(self, tag):
-        HtmlRebuilder.handle_endtag(self, tag)
-
-        if self._language:
-            while self._language:
-                pathlength, lang = self._language[-1]
-                if len(self.tag_path) < pathlength:
-                    self._language.pop()
-                else:
-                    break
-
-    def handle_data(self, data):
-        if len(self._language) == 0 or HtmlHyphenator.dont_hyphenate_if_in.intersection(self.tag_path) \
-           or not data.strip():
-            HtmlRebuilder.handle_data(self, data)
-        else:
-            HtmlRebuilder.handle_data(self, self._hyphenate(data))
 
 
 class HtmlPostProcessor(object):
@@ -194,8 +114,4 @@ class HtmlPostProcessor(object):
     def after_rendering(self, page):
         "Entry point. Gets the rendered page as unicode string."
         # 1024 is just a rough guesstimate of how many hyphenation marks we will insert
-        html_processor = HtmlHyphenator(
-            page,
-            buffer_size = len(page['rendered']) + 1024
-        )
-        page['rendered'] = html_processor.transform()
+        page['rendered'] = HtmlHyphenator.transform(page)

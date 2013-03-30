@@ -122,6 +122,7 @@ setup(
         'python-dateutil',
         'pytz',
         'PyYAML',
+        'lxml >= 3.1.0',
     ] + one_supported_templating_engine() \
     + one_hyphenation_module(),
     classifiers=classifiers,
