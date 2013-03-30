@@ -6,11 +6,6 @@ from lxml import etree
 from thot.utils import partition
 
 try:
-    from StringIO import StringIO # must support unicode, hence no cStringIO
-except:
-    from io import StringIO # we prefer StringIO.StringIO because Python's docs say it is faster
-
-try:
     import pyphen
     has_pyphen = True
 except:
@@ -58,7 +53,6 @@ class HtmlHyphenator(object):
     @classmethod
     def transform(self, page):
         parser = etree.HTMLParser(encoding='utf-8')
-        #dom_tree = etree.parse(StringIO(page['rendered'].encode('utf-8')), parser)
         dom_tree = etree.fromstring(page['rendered'].encode('utf-8'), parser)
 
         language_annotated_text = 'body//*[ancestor-or-self::*/@lang and string-length(text()) > 5]'
