@@ -51,10 +51,7 @@ class HtmlHyphenator(object):
                 return ancestor.attrib['lang']
 
     @classmethod
-    def transform(self, page):
-        parser = etree.HTMLParser(encoding='utf-8')
-        dom_tree = etree.fromstring(page['rendered'].encode('utf-8'), parser)
-
+    def transform(self, page, dom_tree):
         language_annotated_text = 'body//*[ancestor-or-self::*/@lang and string-length(text()) > 5]'
         for elem in dom_tree.xpath(language_annotated_text):
             tag_path = [ancestor.tag for ancestor in elem.iterancestors()]
@@ -66,8 +63,6 @@ class HtmlHyphenator(object):
                 for child in elem.iterchildren():
                     if child.tail and not child.tail.isspace():
                         child.tail = self._hyphenate(child.tail, lang)
-
-        return etree.tostring(dom_tree, xml_declaration=False, encoding="utf-8").decode('utf-8')
 
     @classmethod
     def _get_hyphenator(self, lang):
@@ -106,6 +101,11 @@ class HtmlPostProcessor(object):
         logging.debug('Plugin "%s" has been initalized.', self)
 
     def after_rendering(self, page):
-        "Entry point. Gets the rendered page as unicode string."
-        # 1024 is just a rough guesstimate of how many hyphenation marks we will insert
-        page['rendered'] = HtmlHyphenator.transform(page)
+        """Entry point. Gets the rendered page as unicode string and breaks it down to DOM.
+        """
+        parser = etree.HTMLParser(encoding='utf-8')
+        dom_tree = etree.fromstring(page['rendered'].encode('utf-8'), parser)
+
+        HtmlHyphenator.transform(page, dom_tree)
+
+        page['rendered'] = etree.tostring(dom_tree, xml_declaration=False, encoding="utf-8").decode('utf-8')
