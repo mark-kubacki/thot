@@ -1,0 +1,36 @@
+status: hidden
+template: self
+
+<%
+import string
+
+from pytz import UTC
+import ujson
+
+reduced_list = []
+for item in pages:
+  if item['status'] in ['hidden', 'draft'] \
+    or item['url'].endswith('.json'):
+    continue
+  list_item = {
+    "url":			"/"+item['url'],
+    "title":			item['title'],
+    "category":			string.capwords(item['category']) if 'category' in item else None,
+    "date":			item['date'].astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "date_unix":		item['date'],
+    "date_human":		item['date'].strftime("%d %b %Y"),
+    "last_modified":		item['mtime'].astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "last_modified_unix":	item['mtime'],
+  }
+
+  if 'tags' in item:
+    if type(item['tags']) == list:
+      list_item['tags'] = [string.capwords(str(k)) for k in item['tags']]
+    else:
+      list_item['tags'] = [string.capwords(str(item['tags']))]
+  else:
+    list_item['tags'] = []
+
+  reduced_list.append(list_item)
+
+%>${ ujson.dumps(reduced_list) }

@@ -32,7 +32,7 @@ GZIP_ENDINGS = [
     '.css', '.js', '.xml', '.txt', '.sh', '.svg',
     '.xls', '.doc', '.xjs', '.psd', '.ppt',
     '.java', '.py', '.pyc', '.pyo', '.bat', '.dll', '.lib',
-    '.cfg', '.ini',
+    '.cfg', '.ini', '.json',
     ]
 
 def quickstart(settings):

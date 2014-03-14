@@ -20,7 +20,7 @@ parser_map = dict()
 
 class Parser(object):
     output_ext = None
-    parses = ['html', 'htm', 'xml', 'txt']
+    parses = ['html', 'htm', 'xml', 'txt', 'sitemap.json', 'tags.json', 'categories.json']
 
     def __init__(self, settings, source, filename):
         self.settings = settings
@@ -134,4 +134,7 @@ def get_parser_for_filename(filename):
     try:
         return parser_map[ext]
     except KeyError:
-        return
+        try:
+            return parser_map[filename.split('/')[-1]]
+        except KeyError:
+            return
