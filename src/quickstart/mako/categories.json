@@ -4,7 +4,10 @@ template: self
 <%
 import string
 
-import ujson
+try:
+  import ujson as json
+except ImportError:
+  import json
 
 reduced_list = []
 for item in pages:
@@ -16,4 +19,4 @@ for item in pages:
 
 reduced_list = set([string.capwords(str(k)) for k in reduced_list if len(k) >= 3])
 
-%>${ ujson.dumps(reduced_list) }
+%>${ json.dumps(reduced_list) }

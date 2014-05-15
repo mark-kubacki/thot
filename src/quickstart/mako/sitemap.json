@@ -5,7 +5,10 @@ template: self
 import string
 
 from pytz import UTC
-import ujson
+try:
+  import ujson as json
+except ImportError:
+  import json
 
 reduced_list = []
 for item in pages:
@@ -33,4 +36,4 @@ for item in pages:
 
   reduced_list.append(list_item)
 
-%>${ ujson.dumps(reduced_list) }
+%>${ json.dumps(reduced_list) }
