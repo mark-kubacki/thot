@@ -4,7 +4,7 @@ import logging
 import yaml
 from optparse import OptionParser
 from os import makedirs, getcwd, getlogin
-from os.path import join, dirname, abspath, exists
+from os.path import join, dirname, abspath, exists, realpath
 from shutil import copytree
 import sys
 import time
@@ -36,6 +36,18 @@ GZIP_ENDINGS = [
     ]
 
 def quickstart(settings):
+    # determine the quickstart template's location in advance
+    tmpl_relpath = ['share', 'thot', 'quickstart', settings['templating_engine']]
+    tmpl_path = join(sys.prefix, *tmpl_relpath)
+    if not exists(tmpl_path):
+        tmpl_path = realpath(
+            join(pkg_resources.resource_filename('thot', ''), '..', *tmpl_relpath)
+        )
+        if not exists(tmpl_path):
+            print "Sorry, cannot find directory %s" % join(*tmpl_relpath)
+            sys.exit(3)
+
+    # get default configuration values
     login = getlogin()
 
     author_name = raw_input("Author Name [%s]: " % login) or login
@@ -62,7 +74,6 @@ def quickstart(settings):
     }}
 
     # copy quickstart template
-    tmpl_path = join(sys.prefix, 'share', 'thot', 'quickstart', settings['templating_engine'])
     copytree(tmpl_path, settings['project_dir'])
 
     # before writing the settings file, make sure the _lib dir exists

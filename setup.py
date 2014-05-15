@@ -80,11 +80,6 @@ setup(
 
     packages = find_packages('src'),
     package_dir = {'': 'src'},
-    package_data={
-        'thot': ['templates/default.html',
-                 'templates/default.mak',
-                 ],
-    },
     data_files = find_data_files('src/quickstart', 'share/thot/quickstart'),
     zip_safe = False,
 
