@@ -31,12 +31,13 @@ def find_data_files(path, prefix):
     return lst
 
 def one_supported_templating_engine():
+    always_want = ['Mako >= 0.4.0']
     try:
         import jinja2
-        return []
+        return always_want + ['Jinja2']
     except ImportError:
         pass
-    return ['Mako >= 0.4.0']
+    return always_want
 
 def one_hyphenation_module():
     try: # from SF
