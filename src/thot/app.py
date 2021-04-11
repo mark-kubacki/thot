@@ -3,9 +3,10 @@ from datetime import datetime
 import logging
 import yaml
 from optparse import OptionParser
-from os import makedirs, getcwd, getlogin
+from os import makedirs, getcwd, getuid
 from os.path import join, dirname, abspath, exists, realpath
 from shutil import copytree
+import pwd
 import sys
 import time
 import pytz
@@ -48,21 +49,28 @@ def quickstart(settings):
             sys.exit(3)
 
     # get default configuration values
-    login = getlogin()
+    author_name  = login = pwd.getpwuid(getuid())[0]
+    author_email = author_email_default = '%s@localhost' % login
+    website_url  = website_url_default = 'http://www.example.org'
+    language     = language_default = 'de'
+    timezone     = 'UTC'
 
-    author_name = raw_input("Author Name [%s]: " % login) or login
-    author_email_default = '%s@example.org' % login
-    author_email = raw_input("Author Email [%s]: " % author_email_default) or author_email_default
-    website_url_default = 'http://www.example.org'
-    website_url = raw_input("Website URL [%s]: " % website_url_default) or website_url_default
-    timezone = 'tbd'
-    while not timezone in pytz.all_timezones_set:
-        if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
-        timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
-                             + "'UTC' or something other: ")
-    language_default = 'de'
-    language = raw_input("Default language tag (de, en_US, en_GB...) [%s]: " % language_default) \
-               or language_default
+    try:
+        author_name  = raw_input("Author Name [%s]:  " % login) or login
+        author_email = raw_input("Author Email [%s]: " % author_email_default) or author_email_default
+        website_url  = raw_input("Website URL [%s]:  " % website_url_default) or website_url_default
+        timezone = 'tbd'
+        while not timezone in pytz.all_timezones_set:
+            if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
+            timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
+                                + "'UTC' or something other: ")
+        language = raw_input("Default language tag (de, en_US, en_GB...) [%s]: " % language_default) \
+                or language_default
+    except EOFError:
+        # Absent a controlling terminal raw_input will throw EOFError.
+        # Probably run by a script, go with predictable defaults.
+        pass
+
     config = {'thot': {
         'website_url': website_url,
         'timezone': timezone,
@@ -147,16 +155,22 @@ def main():
 
     # quickstart
     if options.quickstart:
-        quickstart(settings)
+        u = quickstart(settings)
+        settings.update(u)
         settings['build_time'] = pytz.utc.localize(datetime.utcnow())
         print '\nYour website will be available at %s' % settings['output_dir']
+        sys.stdout.flush()
 
     # read settings file
     if exists(settings['settings_path']):
         with open(settings['settings_path'], 'rb', encoding='utf-8') as configfile:
             config = yaml.safe_load(configfile.read())
         settings.update(config['pyll'] if 'pyll' in config else config['thot'])
+    else:
+        logging.error('Not found: %s', settings['settings_path'])
+        sys.exit(1)
     logging.debug('settings %s', settings)
+
     # check and find the user's timezone
     if not 'timezone' in settings:
         settings['timezone'] = 'UTC'
