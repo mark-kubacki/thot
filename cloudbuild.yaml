@@ -1,0 +1,23 @@
+timeout: 60s
+options:
+  volumes:
+  - name: 'OUTPUT'
+    path: '/state'
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'build container with thot'
+  args: ['build', '--file=Dockerfile.testenv', '--tag=localhost/thot', '.']
+
+- name: 'localhost/thot'
+  id: 'quickstart with jinja2'
+  waitFor: ['build container with thot']
+  dir: '/state'
+  entrypoint: 'thot'
+  args: ['--quickstart', '-t', 'jinja2', 'newJinja2Blog']
+- name: 'localhost/thot'
+  id: 'quickstart with Mako'
+  waitFor: ['build container with thot']
+  dir: '/state'
+  entrypoint: 'thot'
+  args: ['--quickstart', '-t', 'mako', '--logging', 'debug', 'newMakoBlog']

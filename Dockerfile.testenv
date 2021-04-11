@@ -1,0 +1,10 @@
+FROM mirror.gcr.io/library/python:2.7
+
+COPY . /usr/src/thot
+
+RUN pip --disable-pip-version-check \
+      --cache-dir /var/cache/pip \
+      install \
+        /usr/src/thot/vendor/wordaxe-1.0.1.zip \
+        jinja2 \
+        /usr/src/thot
