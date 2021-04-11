@@ -17,6 +17,6 @@ for item in pages:
   if 'category' in item:
     reduced_list += item['category']
 
-reduced_list = set([string.capwords(str(k)) for k in reduced_list if len(k) >= 3])
+reduced_list = list(set([string.capwords(str(k)) for k in reduced_list if len(k) >= 3]))
 
 %>${ json.dumps(reduced_list) }

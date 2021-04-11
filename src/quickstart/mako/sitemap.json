@@ -20,10 +20,8 @@ for item in pages:
     "title":			item['title'],
     "category":			string.capwords(item['category']) if 'category' in item else None,
     "date":			item['date'].astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "date_unix":		item['date'],
     "date_human":		item['date'].strftime("%d %b %Y"),
     "last_modified":		item['mtime'].astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "last_modified_unix":	item['mtime'],
   }
 
   if 'tags' in item:
