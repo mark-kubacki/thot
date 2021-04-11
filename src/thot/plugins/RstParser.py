@@ -122,7 +122,7 @@ class PygmentsDirective(Directive):
             lexer = TextLexer()
         # take an arbitrary option if more than one is given
         formatter = HtmlFormatter(noclasses=False)
-        parsed = highlight(u'\n'.join(self.content), lexer, formatter)
+        parsed = highlight('\n'.join(self.content), lexer, formatter)
         return [nodes.raw('', parsed, format='html')]
 
 

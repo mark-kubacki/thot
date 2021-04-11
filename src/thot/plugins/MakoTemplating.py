@@ -31,12 +31,12 @@ class MakoTemplate(object):
             return template.render(ordinal_suffix=ordinal_suffix,
                                    datetimeformat=self.e_datetimeformat,
                                    **kwargs)
-        except TopLevelLookupException, e:
+        except TopLevelLookupException as e:
             raise TemplateException(e.message)
-        except Exception, e:
+        except Exception as e:
             # only works for template files; v0.4.1
             try:
-                print text_error_template().render()
+                print(text_error_template().render())
             except:
                 pass
             raise e
@@ -50,6 +50,6 @@ class MakoTemplate(object):
     def render_file(self, template_name, **kwargs):
         try:
             template = self.template_lookup.get_template(template_name)
-        except TopLevelLookupException, e:
+        except TopLevelLookupException as e:
             raise TemplateException(e.message)
         return self._render(template, **kwargs)

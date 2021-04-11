@@ -1,5 +1,5 @@
 import logging
-from StringIO import StringIO
+from io import StringIO
 from anzu.httpclient import HTTPClient, HTTPError
 from anzu.escape import xhtml_unescape
 from lxml import etree
@@ -12,11 +12,11 @@ def get_page(url, charset='utf-8', decode=True):
 	client = HTTPClient()
 	try:
 		response = client.fetch(url)
-	except HTTPError, he:
+	except HTTPError as he:
 		#logging.debug(he)
 		logging.debug('HTTPError when loading "%s"', url)
 		return None
-	except Exception, e:
+	except Exception as e:
 		logging.warn(e)
 		return None
 	if 200 <= response.code < 300:

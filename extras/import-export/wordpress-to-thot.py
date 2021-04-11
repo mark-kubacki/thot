@@ -1,5 +1,6 @@
 #!/bin/env python
 from os import getlogin, makedirs, path, utime
+from collections import OrderedDict
 from datetime import datetime
 import codecs
 import logging
@@ -14,11 +15,6 @@ from anzu.options import parse_command_line, enable_pretty_logging
 from anzu.escape import xhtml_unescape
 from export_helper import get_page, get_part_of_page, get_gravatar_for
 
-try:
-	from collections import OrderedDict
-except:
-	from thot.utils import OrderedDict
-
 enable_pretty_logging()
 parse_command_line()
 
@@ -28,14 +24,14 @@ GMT = pytz.timezone('GMT')
 build_tz = pytz.timezone(time.strftime("%Z", time.gmtime()))
 plugin = re.compile(r'\[\w')
 
-print "MySQL connection data."
+print("MySQL connection data.")
 mysql_conn = {
-	'host':   raw_input("  host [localhost]: ") or "localhost",
-	'db':     raw_input("  database [%s_blog]: " % getlogin()) or getlogin()+"_blog",
-	'user':   raw_input("  mysql username [%s]: " % getlogin()) or getlogin(),
-	'passwd': raw_input("  password: ") or None,
+	'host':   input("  host [localhost]: ") or "localhost",
+	'db':     input("  database [%s_blog]: " % getlogin()) or getlogin()+"_blog",
+	'user':   input("  mysql username [%s]: " % getlogin()) or getlogin(),
+	'passwd': input("  password: ") or None,
 }
-wp_prefix = raw_input("  table prefix [wp_]: ") or "wp_"
+wp_prefix = input("  table prefix [wp_]: ") or "wp_"
 
 con = mdb.connect(**mysql_conn)
 logging.info("Connection to MySQL has been established.")
@@ -50,16 +46,16 @@ cur.execute("SELECT COUNT(*) FROM %scomments WHERE comment_approved='1';" % wp_p
 number_comments = cur.fetchone()[0]
 
 ## what shall we do?
-print "You have %d published blog posts and %d approved comments." % (int(number_posts), int(number_comments))
-print "Do you want to export..."
-export_posts = (raw_input("  all posts? [y/N]") or "n") in ['Y', 'y', 'J', 'j']
+print("You have %d published blog posts and %d approved comments." % (int(number_posts), int(number_comments)))
+print("Do you want to export...")
+export_posts = (input("  all posts? [y/N]") or "n") in ['Y', 'y', 'J', 'j']
 if export_posts:
-	screen_scrape_if_necessary = (raw_input("  .. screen scrape if necessary? [Y/n]") or "y") in ['Y', 'y', 'J', 'j']
-export_comments = (raw_input("  all comments? [y/N]") or "N") in ['Y', 'y', 'J', 'j']
+	screen_scrape_if_necessary = (input("  .. screen scrape if necessary? [Y/n]") or "y") in ['Y', 'y', 'J', 'j']
+export_comments = (input("  all comments? [y/N]") or "N") in ['Y', 'y', 'J', 'j']
 if export_comments:
-	check_pingbacks = (raw_input("  .. check whether pingbacks still link to the page? [Y/n]") or "y") in ['Y', 'y', 'J', 'j']
-	get_gravatar = (raw_input("  .. get gravatar images and store them in comments' files? [y/N]") or "n") in ['Y', 'y', 'J', 'j']
-outdir = raw_input("Directory for exports? [<empty>]") or ""
+	check_pingbacks = (input("  .. check whether pingbacks still link to the page? [Y/n]") or "y") in ['Y', 'y', 'J', 'j']
+	get_gravatar = (input("  .. get gravatar images and store them in comments' files? [y/N]") or "n") in ['Y', 'y', 'J', 'j']
+outdir = input("Directory for exports? [<empty>]") or ""
 
 if outdir and not path.exists(outdir):
 	makedirs(outdir)
@@ -73,7 +69,7 @@ if export_posts:
 	# """
 	authors = {}
 	for row in cur:
-		data = dict(zip([c[0] for c in cur.description], row))
+		data = dict(list(zip([c[0] for c in cur.description], row)))
 		authors[data['ID']] = {'name': data['name'], 'email': data['email']}
 	logging.info("Number of authors: %d", len(authors))
 	if len(authors) < 2:
@@ -91,7 +87,7 @@ if export_posts:
 	# """
 	labels = {}
 	for row in cur:
-		data = dict(zip([c[0] for c in cur.description], row))
+		data = dict(list(zip([c[0] for c in cur.description], row)))
 		if 'post_tag' == data['taxonomy']:
 			data['taxonomy'] = 'tags'
 
@@ -125,7 +121,7 @@ if export_posts:
 	WHERE post_type='post' and post_status='publish'""" % wp_prefix)
 	# """
 	for row in cur:
-		post = dict(zip([c[0] for c in cur.description], row))
+		post = dict(list(zip([c[0] for c in cur.description], row)))
 		postfile_path = path.join(outdir, str(post['date'].year), "%02d" % post['date'].month, post['cruft']+'.html')
 		if path.exists(postfile_path):
 			logging.warn('skipping "%s" (already exists or name conflict)', postfile_path)
@@ -162,7 +158,7 @@ if export_posts:
 			content = get_part_of_page(post['old_path'])
 		else:
 			logging.debug('post "%s" seems not to have any plugin-generated content', postfile_path)
-			content = post['content'].decode('utf-8')
+			content = post['content']
 		del post['content']
 		del post['old_path']
 		# write post to file
@@ -193,7 +189,7 @@ if export_comments:
 	comments_by_id = dict()
 	threads = OrderedDict()
 	for row in cur:
-		comment = dict(zip([c[0] for c in cur.description], row))
+		comment = dict(list(zip([c[0] for c in cur.description], row)))
 		comment['content'] = xhtml_unescape(comment['content']).replace('\r', '')
 		comment['postfile_path'] = path.join(outdir, str(comment['post_date'].year), "%02d" % comment['post_date'].month, comment['post_name']+'.comments')
 

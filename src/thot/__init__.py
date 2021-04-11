@@ -15,6 +15,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 version = __version__
-version_info = (1, 2, 1)
+version_info = (1, 3, 0)

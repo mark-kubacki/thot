@@ -45,7 +45,7 @@ def quickstart(settings):
             join(pkg_resources.resource_filename('thot', ''), '..', *tmpl_relpath)
         )
         if not exists(tmpl_path):
-            print "Sorry, cannot find directory %s" % join(*tmpl_relpath)
+            print("Sorry, cannot find directory %s" % join(*tmpl_relpath))
             sys.exit(3)
 
     # get default configuration values
@@ -56,15 +56,15 @@ def quickstart(settings):
     timezone     = 'UTC'
 
     try:
-        author_name  = raw_input("Author Name [%s]:  " % login) or login
-        author_email = raw_input("Author Email [%s]: " % author_email_default) or author_email_default
-        website_url  = raw_input("Website URL [%s]:  " % website_url_default) or website_url_default
+        author_name  = input("Author Name [%s]:  " % login) or login
+        author_email = input("Author Email [%s]: " % author_email_default) or author_email_default
+        website_url  = input("Website URL [%s]:  " % website_url_default) or website_url_default
         timezone = 'tbd'
         while not timezone in pytz.all_timezones_set:
-            if timezone != 'tbd': print "Sorry, '%s' is unknown. Try again." % timezone
-            timezone = raw_input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
+            if timezone != 'tbd': print("Sorry, '%s' is unknown. Try again." % timezone)
+            timezone = input("Your timezone, e.g. 'Europe/Berlin', 'US/Eastern', 'US/Pacific', \n"
                                 + "'UTC' or something other: ")
-        language = raw_input("Default language tag (de, en_US, en_GB...) [%s]: " % language_default) \
+        language = input("Default language tag (de, en_US, en_GB...) [%s]: " % language_default) \
                 or language_default
     except EOFError:
         # Absent a controlling terminal raw_input will throw EOFError.
@@ -158,7 +158,7 @@ def main():
         u = quickstart(settings)
         settings.update(u)
         settings['build_time'] = pytz.utc.localize(datetime.utcnow())
-        print '\nYour website will be available at %s' % settings['output_dir']
+        print('\nYour website will be available at %s' % settings['output_dir'])
         sys.stdout.flush()
 
     # read settings file
@@ -202,7 +202,7 @@ def main():
     if True:
         site.run()
         if options.hardlinks:
-            print "Keep in mind: Output directory contains hardlinks."
+            print("Keep in mind: Output directory contains hardlinks.")
 
 if __name__ == '__main__':
     main()

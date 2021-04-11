@@ -6,7 +6,7 @@ __all__ = ['PageTags', 'PageCategory']
 
 def add_to_keyed_list(key, collection, page, none_is_key=None):
     if key in page:
-        if type(page[key]) is types.ListType:
+        if type(page[key]) is list:
             drawer = page[key]
         else:
             drawer = [page[key], ]
@@ -53,7 +53,7 @@ class PageTags(object):
         """
         for page in pages:
             if 'index' in page:
-                if type(page['index']) is types.ListType and self.field in page['index']:
+                if type(page['index']) is list and self.field in page['index']:
                     if len(page['index']) <= 1:
                         # exclude its common instance from usual parsing
                         pages.remove(page)

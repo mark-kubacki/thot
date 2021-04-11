@@ -1,7 +1,7 @@
 from fnmatch import fnmatch
 from os.path import splitext, split, relpath
 
-from thot.utils import OrderedDict
+from collections import OrderedDict
 registry = OrderedDict()
 
 def get_url(page):

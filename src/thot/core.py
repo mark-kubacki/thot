@@ -1,4 +1,5 @@
 import codecs
+from collections import OrderedDict
 from datetime import datetime
 import imp
 import logging
@@ -17,7 +18,7 @@ import gzip
 
 from thot import parser, version as thot_version
 from thot.url import get_url
-from thot.utils import copy_file, walk_ignore, OrderedDict
+from thot.utils import copy_file, walk_ignore
 from thot.template import TemplateException, get_templating_cls
 
 class Page(dict):
@@ -122,7 +123,7 @@ class Site(object):
                         self.processor_map[step].append(cls_instance)
                     else:
                         self.processor_map[step] = [cls_instance, ]
-            except Exception, e:
+            except Exception as e:
                 logging.warn('Processor "%s" has not been loaded due to: %s',
                               entrypoint, e)
 
@@ -218,7 +219,7 @@ class Site(object):
                 template = page['template']
 
             try:
-                logging.debug('About to render "%s".', page['output_path'].decode('utf-8'))
+                logging.debug('About to render "%s".', page['output_path'])
                 params = page['params'] if 'params' in page else {}
                 page['rendered'] = render_func(template,
                                        page=page,
@@ -226,7 +227,7 @@ class Site(object):
                                        settings=self.settings,
                                        thot_version=thot_version,
                                        **params)
-                assert type(page['rendered']) == types.UnicodeType
+                assert type(page['rendered']) == str
             except TemplateException as error:
                 logging.error(error)
                 logging.error('skipping article "%s"', page['path'])
@@ -247,8 +248,8 @@ class Site(object):
                 pass
 
             # write to filesystem
-            logging.debug("writing %s to %s", page['path'], output_path.decode('utf-8'))
-            with codecs.open(output_path, 'w', 'utf-8') as f:
+            logging.debug("writing %s to %s", page['path'], output_path)
+            with open(output_path, 'wb') as f:
                 f.write(page['rendered'])
             page_dt_for_fs = page['mtime'].astimezone(self.settings['build_tz'])
             atime = mtime = int(time.mktime(page_dt_for_fs.timetuple()))
@@ -262,7 +263,7 @@ class Site(object):
                 utime(gz_output_path, (atime, mtime))
 
     def _copy_static_file(self, static_file, dst):
-        logging.debug('copying %s to %s', static_file.decode('utf-8'), dst.decode('utf-8'))
+        logging.debug('copying %s to %s', static_file, dst)
         if copy_file(static_file, dst, self.settings['hardlinks']) \
            and self.settings['make_compressed_copy']:
             for ending in self.settings['compress_if_ending']:
@@ -304,9 +305,9 @@ class Site(object):
         self._copy_static_files()
         finish_time = time.time()
         count = len(self.pages)
-        print("OK (%s %s; %s seconds)" % (
+        print(("OK (%s %s; %s seconds)" % (
             count, 'page' if count == 1 else 'pages',
-            round(finish_time - start_time, 2)))
+            round(finish_time - start_time, 2))))
 
 
 class FilesystemSource(object):

@@ -54,7 +54,7 @@ class Parser(object):
         """
         Applies the user's timezone.
         """
-        assert type(value) not in types.StringTypes, \
+        assert type(value) not in (str,), \
             'Date header has been set in "%s" but cannot be parsed. Please use ISO-8601. Time with seconds.' \
             % self.filename
         # if the date is localized - do nothing
@@ -126,7 +126,7 @@ def get_parser_for_filename(filename):
                 cls = entrypoint.load()
                 for e in cls.parses:
                     parser_map[e] = cls
-            except Exception, e:
+            except Exception as e:
                 logging.debug('Parser "%s" has not been loaded due to: %s',
                               entrypoint, e)
 

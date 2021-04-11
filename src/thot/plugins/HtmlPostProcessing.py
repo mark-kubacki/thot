@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 def wordaxe_hyphenation_wrapper(hyphenator, word):
-    word_obj = hyphenator.hyphenate(unicode(word))
+    word_obj = hyphenator.hyphenate(str(word))
     partitions = partition(word, [h.indx for h in word_obj.hyphenations])
     marked_word = HtmlHyphenator.html_hypenation_mark.join(partitions)
     return marked_word
@@ -36,7 +36,7 @@ class HtmlHyphenator(object):
     # maps language-code to hyphenation facility
     hyphenator = dict()
     hyphenator_f = dict()
-    html_hypenation_mark = u'\xad' # chr(173), also known as &shy; - see http://www.w3.org/TR/html401/struct/text.html#h-9.3.3
+    html_hypenation_mark = '\xad' # chr(173), also known as &shy; - see http://www.w3.org/TR/html401/struct/text.html#h-9.3.3
     dont_hyphenate_if_in = set(['head', 'pre', 'code', 'script', 'style'])
 
     # subsequent functions are able to handle nubers and symbols
@@ -108,4 +108,4 @@ class HtmlPostProcessor(object):
 
         HtmlHyphenator.transform(page, dom_tree)
 
-        page['rendered'] = etree.tostring(dom_tree, xml_declaration=False, encoding="utf-8").decode('utf-8')
+        page['rendered'] = etree.tostring(dom_tree, xml_declaration=False, encoding="utf-8")
