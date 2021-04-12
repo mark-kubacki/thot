@@ -6,5 +6,4 @@ RUN pip --disable-pip-version-check \
       --cache-dir /var/cache/pip \
       install \
         git+https://github.com/rst2pdf/wordaxe.git \
-        jinja2 \
-        /usr/src/thot
+        "/usr/src/thot[jinja,code]"

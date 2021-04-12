@@ -25,7 +25,7 @@ for item in pages:
   }
 
   if 'tags' in item:
-    if type(item['tags']) == list:
+    if isinstance(item['tags'], list):
       list_item['tags'] = [string.capwords(str(k)) for k in item['tags']]
     else:
       list_item['tags'] = [string.capwords(str(item['tags']))]

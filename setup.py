@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-#
-# Copyright 2011-2012 W-Mark Kubacki
+# Copyright 2011-2021 Mark Kubacki
 #
 # Licensed under the Reciprocal Public License, Version 1.5 (the "License");
 # you may not use this file except in compliance with the License. You may
@@ -13,39 +11,29 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+"""Setup script for Thot."""
 
-from codecs import open
-from imp import load_source
-from os import walk
-from os.path import join, dirname, abspath
-from setuptools import setup, find_packages
+import codecs
+import importlib
+import os
 
-thot_mod = load_source('thot', join(dirname(abspath(__file__)),
-                                    'src', 'thot', '__init__.py'))
+import setuptools
+
+spec = importlib.util.spec_from_file_location('thot',
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'src', 'thot', '__init__.py'
+    )
+)
+thot_mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(thot_mod)
 
 def find_data_files(path, prefix):
     lst = []
-    for dirpath, dirnames, filenames in walk(path):
+    for dirpath, _, filenames in os.walk(path):
         lst.append((prefix + dirpath.replace(path, ''),
                     [dirpath+'/'+f for f in filenames]))
     return lst
-
-def one_supported_templating_engine():
-    always_want = ['Mako >= 0.4.0']
-    try:
-        import jinja2
-        return always_want + ['Jinja2']
-    except ImportError:
-        pass
-    return always_want
-
-def one_hyphenation_module():
-    try: # from SF
-        import wordaxe
-        return ['wordaxe >= 1.0.1']
-    except ImportError:
-        pass
-    return ['pyphen >= 0.7']
 
 classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -63,21 +51,23 @@ classifiers = [
     'Topic :: Text Processing :: Markup :: XML',
 ]
 
-setup(
+setuptools.setup(
     name = 'thot',
     version = thot_mod.__version__,
     url = 'http://github.com/wmark/thot',
-    download_url = 'http://binhost.ossdl.de/distfiles/thot-%s.tar.gz' % thot_mod.__version__,
+    download_url = \
+        'https://github.com/wmark/thot/releases/download/v{0}/thot-{0}.tar.gz' \
+        .format(thot_mod.__version__),
     license = 'http://www.opensource.org/licenses/rpl1.5',
     description = 'A Python-Powered Static Site Generator',
     author = 'W-Mark Kubacki, Arthur Koziel',
     author_email = 'wmark+thot@hurrikane.de',
-    long_description=open(
-        join(dirname(__file__), 'README.rst'),
+    long_description=codecs.open(
+        os.path.join(os.path.dirname(__file__), 'README.rst'),
         'r', encoding='utf-8',
     ).read(),
 
-    packages = find_packages('src'),
+    packages = setuptools.find_packages('src'),
     package_dir = {'': 'src'},
     data_files = find_data_files('src/quickstart', 'share/thot/quickstart'),
     zip_safe = False,
@@ -118,7 +108,19 @@ setup(
         'pytz',
         'PyYAML',
         'lxml >= 3.1.0',
-    ] + one_supported_templating_engine() \
-    + one_hyphenation_module(),
+        'pyphen >= 0.7',
+        'wordaxe >= 1.0.1',
+        'wordaxe >= 1.1.0 ; python_version>="3"',
+        'Mako >= 0.4.0',
+    ],
+    tests_require=[
+        'nose',
+    ],
+    extras_require={
+        'creole': ['creole'],
+        'trac':   ['trac'],
+        'code':   ['pygments'],
+        'jinja':  ['Jinja2'],
+    },
     classifiers=classifiers,
 )

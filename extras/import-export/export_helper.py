@@ -1,12 +1,16 @@
-import logging
-from io import StringIO
-from anzu.httpclient import HTTPClient, HTTPError
-from anzu.escape import xhtml_unescape
-from lxml import etree
-from hashlib import md5
 from base64 import b64encode
+from hashlib import md5
+from io import StringIO
+import logging
+import warnings
 
-__all__ = ['get_page', 'get_part_of_page', 'get_gravatar_for']
+from anzu.escape import xhtml_unescape
+from anzu.httpclient import HTTPClient, HTTPError
+from lxml import etree
+
+__all__ = [
+	'get_page', 'get_part_of_page', 'get_gravatar_for',
+]
 
 def get_page(url, charset='utf-8', decode=True):
 	client = HTTPClient()
@@ -17,7 +21,7 @@ def get_page(url, charset='utf-8', decode=True):
 		logging.debug('HTTPError when loading "%s"', url)
 		return None
 	except Exception as e:
-		logging.warn(e)
+		warnings.warn(e)
 		return None
 	if 200 <= response.code < 300:
 		if 'charset=' in response.headers.get('content-type'):

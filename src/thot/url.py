@@ -1,11 +1,17 @@
+"""URL to Page mapping related functions.
+"""
+
 from fnmatch import fnmatch
-from os.path import splitext, split, relpath
+import os.path
 
 from collections import OrderedDict
+
 registry = OrderedDict()
 
 def get_url(page):
-    "Returns the final output url string for `page`"
+    """
+    Returns the final output url string for `page`.
+    """
     urlfunc = get_url_func(page)
     url = urlfunc(page)
     return url
@@ -24,13 +30,15 @@ def get_url_func(page):
                 return rules[url]
             elif pattern == '*' and url != 'default':
                 # special case: user entered something but it isn't
-                # a url function -> assume its an output path 
+                # a url function -> assume its an output path
                 return lambda **x: url
             elif 'default' in rules:
                 return rules['default']
 
 def register(func=None, match='*'):
-    "A registry for url rules"
+    """
+    Maintains the (global) registry for url rules.
+    """
     def decorated(func):
         # this returns the final, decorated function,
         # regardless of how it was called
@@ -49,16 +57,16 @@ def register(func=None, match='*'):
 
 @register
 def default(page):
-    "default url rule"
+    """Default url rule."""
     path = page['path']
     ext = page['output_ext']
-    url = splitext(path)[0] + '.' + ext
-    head, tail = split(url)
+    url = os.path.splitext(path)[0] + '.' + ext
+    head, tail = os.path.split(url)
     if tail == 'index.html':
         # don't link to "index.html" files
         url = head + '/'
     return url
 
 @register
-def pretty(page):
+def pretty(_):
     return '$year/$month/$day/$slug/'

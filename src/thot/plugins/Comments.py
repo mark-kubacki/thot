@@ -1,8 +1,18 @@
+"""Plugin for reading comment files.
+
+Their content gets injected into instances of Page,
+and becomes accessible to templates like every other member variable.
+"""
+# pylint: disable=invalid-name
+
 import codecs
 import logging
+
 import yaml
 
-__all__ = ['CommentsFromFile']
+__all__ = [
+    'CommentsFromFile',
+]
 
 class CommentsFromFile(object):
     """
@@ -29,10 +39,10 @@ class CommentsFromFile(object):
         comment_suffix = page['slug'] + '.comments'
         for comment_file_path in page['static_files']:
             if comment_file_path.endswith(comment_suffix):
-                logging.debug('Comment file for page "%s" has been found.', page)
+                logging.debug('No comment file for page: %s', page)
                 return comment_file_path
         else:
-            logging.debug('No comment file for page "%s" has been found', page)
+            logging.debug('No comment file for page: %s', page)
             return None
 
     def before_page_parsing(self, page):
@@ -52,8 +62,8 @@ class CommentsFromFile(object):
             with codecs.open(comment_file, 'r', encoding='utf-8') as f:
                 comments = yaml.safe_load(f)
                 return comments or []
-        except Exception as exception:
-            logging.error(exception)
-            logging.error('skipping comments for page "%s"', page)
+        except yaml.YAMLError as e:
+            logging.error(e)
+            logging.error('Skipping comments from: %s', comment_file)
             return None
 

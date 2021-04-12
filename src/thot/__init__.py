@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright © 2011–2021 Mark Kubacki
 #
@@ -14,6 +13,9 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+"""Thot, the static site generator.
+"""
 
 __version__ = "1.3.0"
 version = __version__

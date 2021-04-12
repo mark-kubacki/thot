@@ -1,3 +1,7 @@
+"""Plugin for ingesting Markdown.
+"""
+# pylint: disable=invalid-name
+
 import markdown
 
 from thot.parser import Parser
@@ -12,6 +16,8 @@ class MarkdownParser(Parser):
     parses = ['md', 'markdown']
 
     def _parse_text(self):
-        self.text = markdown.markdown(self.text,
-                                      ['codehilite(css_class=highlight)'])
+        self.text = markdown.markdown(
+            self.text,
+            extensions=['codehilite(css_class=highlight)'],
+        )
 

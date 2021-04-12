@@ -1,10 +1,13 @@
-import logging
-import yaml
-import pytz
-import types
+"""Translators from input formats.
+"""
+
 from datetime import datetime, date, time
 from os.path import splitext
+import logging
+
 import pkg_resources
+import pytz
+import yaml
 
 __all__ = [
     'ParserException', 'Parser', 'get_parser_for_filename',
@@ -19,8 +22,14 @@ parser_map = dict()
 
 
 class Parser(object):
+    """Mixin for anything that consumes input text.
+
+    Overwrite at least _parse_text()
+    and member variables output_ext, parses.
+    """
     output_ext = None
-    parses = ['html', 'htm', 'xml', 'txt', 'sitemap.json', 'tags.json', 'categories.json']
+    parses = ['html', 'htm', 'xml', 'txt',
+        'sitemap.json', 'tags.json', 'categories.json']
 
     def __init__(self, settings, source, filename):
         self.settings = settings
@@ -36,10 +45,14 @@ class Parser(object):
         """
         if not self.headers:
             self._split_input()
-            self.headers = yaml.safe_load(self.header_raw) if self.header_raw != '' else {}
+            self.headers = yaml.safe_load(self.header_raw) \
+                if self.header_raw != '' else {}
             if 'mtime' in self.headers:
-                logging.warn('File "%s" overwrites property "mtime" - which leads to caching errors with proxies and browsers.',
-                             self.filename)
+                # pylint: disable=logging-not-lazy
+                logging.warning(
+                    'File "%s" overwrites property "mtime"' \
+                    + ' - which can result in caching errors browsers.',
+                    self.filename)
             for key in self.headers:
                 value = self.headers[key]
                 if value:
@@ -54,22 +67,25 @@ class Parser(object):
         """
         Applies the user's timezone.
         """
-        assert type(value) not in (str,), \
-            'Date header has been set in "%s" but cannot be parsed. Please use ISO-8601. Time with seconds.' \
+        assert not isinstance(value, str), \
+            'Date header has been set in "%s" but cannot be parsed.'\
+            + ' Please use ISO-8601. Time with seconds.' \
             % self.filename
         # if the date is localized - do nothing
         if hasattr(value, 'tzname') and value.tzname():
             return value
-        if type(value) == date:
+        if isinstance(value, date):
             value = datetime.combine(value, time(0, 0))
         user_tz = self.settings['timezone']
         # if the user specified a different timezone, use that
         if 'timezone' in self.headers:
             if self.headers['timezone'] in pytz.all_timezones_set:
-                user_tz = pytz.timezone[self.headers['timezone']]
+                user_tz = pytz.timezone(self.headers['timezone'])
             else:
-                logging.warn('Timezone "%s" specified in "%s" is unknown, "%s" will be used instead',
-                             self.headers['timezone'], self.filename, user_tz)
+                logging.warning( # pylint: disable=logging-not-lazy
+                    'Timezone "%s" specified in "%s" is unknown, ' \
+                    + '"%s" will be used instead',
+                    self.headers['timezone'], self.filename, user_tz)
         return user_tz.localize(value)
     _parse_expires_header = _parse_date_header
 
@@ -98,15 +114,18 @@ class Parser(object):
         if self.text:
             return
         parts = []
-        if self.source.startswith('---') and self.source.count("---\n") >= 2:
-            parts = self.source.split("\n---\n", 1)
+        if self.source.startswith('---') and self.source.count('---\n') >= 2:
+            parts = self.source.split('\n---\n', 1)
         if len(parts) < 2:
-            parts = self.source.split("\n\n", 1)
+            parts = self.source.split('\n\n', 1)
         if len(parts) >= 2:
             self.header_raw = parts[0]
             self.text = parts[-1]
         else:
-            logging.warn("'%s' has no headers, only content - at least 'title' will be missing.", self.filename)
+            logging.warning( # pylint: disable=logging-not-lazy
+                "'%s' has no headers, only content" \
+                + "- at least 'title' will be missing.",
+                self.filename)
             self.text = self.source
 
     def parse(self):
@@ -126,7 +145,7 @@ def get_parser_for_filename(filename):
                 cls = entrypoint.load()
                 for e in cls.parses:
                     parser_map[e] = cls
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 logging.debug('Parser "%s" has not been loaded due to: %s',
                               entrypoint, e)
 

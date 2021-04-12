@@ -1,27 +1,29 @@
-import os
-import shutil
-import hashlib
-import base64
-import errno
-import logging
-import mimetypes
+"""Legacy collection of functions that need to be filed elsewhere.
+"""
 
 from fnmatch import fnmatch
-from weakref import proxy as _proxy
 from glob import glob
-from tempfile import mkstemp, gettempdir
 from subprocess import Popen, PIPE
+from tempfile import mkstemp, gettempdir
+import base64
+import errno
+import hashlib
+import logging
+import mimetypes
+import os
+import shutil
 
 try:
     import murmur
     has_murmur = True
-except:
+except ModuleNotFoundError:
     has_murmur = False
 
 __all__ = [
     'ordinal_suffix', 'datetimeformat', 'walk_ignore', 'get_hash_from_path',
     'equivalent_files', 'copy_file', 'partition',
-    'supported_image_formats', 'default_image_format', 'render_latex_to_image', 'embed_image',
+    'supported_image_formats', 'default_image_format', 'render_latex_to_image',
+    'embed_image',
 ]
 
 def ordinal_suffix(day):
@@ -32,10 +34,10 @@ def ordinal_suffix(day):
     """
     day = int(day)
     if 4 <= day <= 20 or 24 <= day <= 30:
-        suffix = "th"
+        suffix = 'th'
     else:
-        suffix = ["st", "nd", "rd"][day % 10 - 1]
-    return "%s%s" % (day, suffix)
+        suffix = ['st', 'nd', 'rd'][day % 10 - 1]
+    return '%s%s' % (day, suffix)
 
 def datetimeformat(value, format='%H:%M / %d-%m-%Y'):
     """
@@ -45,19 +47,20 @@ def datetimeformat(value, format='%H:%M / %d-%m-%Y'):
     value -- tuple or struct_time representing a time
     format -- the desired format
     """
+    # pylint: disable=redefined-builtin
     return value.strftime(format)
 
 # monkeypatching for hardlinks; suggested by Dieter Deyke '2006
 if os.name == 'nt':
     import ctypes
-    def CreateHardLinkWin(src, dst):
+    def create_hard_link_windows(src, dst):
         if not ctypes.windll.kernel32.CreateHardLinkA(dst, src, 0):
             raise OSError
-    os.link = CreateHardLinkWin
+    os.link = create_hard_link_windows
 
 
 def walk_ignore(path):
-    "Custom walker that ignores specific filenames"
+    """Custom walker that ignores specific filenames."""
     ignores = ('.*', '*~', '#*', '_*',)
     for dirpath, dirnames, filenames in os.walk(path):
         for pattern in ignores:
@@ -66,7 +69,7 @@ def walk_ignore(path):
         yield dirpath, dirnames, filenames
 
 def get_hash_from_path(path, algorithm='sha1'):
-    "Returns the hash of the file `path`."
+    """Returns the hash of the file `path`."""
     f = open(path)
     content = f.read()
     f.close()
@@ -75,10 +78,11 @@ def get_hash_from_path(path, algorithm='sha1'):
     return m.hexdigest()
 
 def equivalent_files(src, dst):
-    "True if `src` and `dst` are the equivalent."
+    """True if `src` and `dst` are the equivalent."""
     # Same inode on same device <=> thus identical?
     src_stat, dst_stat = os.stat(src), os.stat(dst)
-    if src_stat.st_dev == dst_stat.st_dev and src_stat.st_ino == dst_stat.st_ino:
+    if src_stat.st_dev == dst_stat.st_dev \
+       and src_stat.st_ino == dst_stat.st_ino:
         return True
     # Else, same file content?
     else:
@@ -163,7 +167,7 @@ def render_latex_to_image(math, image_format='png'):
     """
     # generate an input file
     latex = DOC_HEAD + DOC_BODY % math
-    latex_fd, latex_filename = mkstemp(suffix='.tex')
+    _, latex_filename = mkstemp(suffix='.tex')
     with open(latex_filename, 'wb') as latex_file:
         latex_file.write(latex)
 
@@ -172,39 +176,47 @@ def render_latex_to_image(math, image_format='png'):
         'latex', '--interaction=nonstopmode', latex_filename
     ]
     dvi_converter_cmdline = {
-        'png': ['dvipng',
-                '-o', latex_filename.replace('.tex', '.png'),
-                '-T', 'tight',
-                '-bg', 'Transparent',
-                '-z9',
-                latex_filename.replace('.tex', '.dvi'),
-               ],
-        'svg': ['dvisvgm',
-                '--no-styles', '--no-fonts', # or what IE 10 will display is a mess
-                latex_filename.replace('.tex', '.dvi'),
-                ],
+        'png': [
+            'dvipng',
+            '-o', latex_filename.replace('.tex', '.png'),
+            '-T', 'tight',
+            '-bg', 'Transparent',
+            '-z9',
+            latex_filename.replace('.tex', '.dvi'),
+        ],
+        'svg': [
+            'dvisvgm',
+            '--no-styles', '--no-fonts', # or what IE 10 will display is a mess
+            latex_filename.replace('.tex', '.dvi'),
+        ],
     }
 
     curdir = os.getcwd()
     os.chdir(gettempdir())
 
     try:
-        for cmdline, cmdref in [(latex_cmdline, 'LaTeX'), (dvi_converter_cmdline[image_format], 'dvipng')]:
+        for cmdline, cmdref in [
+                (latex_cmdline, 'LaTeX'),
+                (dvi_converter_cmdline[image_format], 'dvipng'),
+            ]:
             try:
                 p = Popen(cmdline, stdout=PIPE, stderr=PIPE)
             except OSError as err:
                 if err.errno != errno.ENOENT: # no such file or directory
                     raise
-                logging.error('%s command cannot be run, but is needed for math markup.', cmdref)
+                logging.error(
+                    '%s command cannot be run, but is needed for math markup.',
+                    cmdref)
                 return None
 
             stdout, stderr = p.communicate()
             if p.returncode != 0:
-                logging.error('%s command exited with error: \n[stderr]\n%s\n[stdout]\n%s',
-                              cmdref, stderr, stdout)
+                logging.error(
+                    '%s exited with error: \n[stderr]\n%s\n[stdout]\n%s',
+                    cmdref, stderr, stdout)
                 return None
     finally:
-        # now we have a bunch of files, of which we have to delete all but the PNG
+        # Above has generated a surplus of files that are not needed.
         for filename in glob(latex_filename[0:-4] + '*'):
             if not filename.endswith('.'+image_format):
                 os.remove(filename)
@@ -218,5 +230,6 @@ def embed_image(image_path):
     Returns a Data URI string of the image for embedding in HTML or CSS.
     """
     mimetype = mimetypes.guess_type(image_path)[0]
-    b64img = base64.encodestring(open(image_path, 'rb').read()).replace("\n", "")
-    return "".join(['data:', mimetype, ';base64,', b64img])
+    b64img = base64.encodestring(open(image_path, 'rb').read())\
+        .replace('\n', '')
+    return ''.join(['data:', mimetype, ';base64,', b64img])

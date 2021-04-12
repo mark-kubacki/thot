@@ -1,25 +1,41 @@
-import types
-import logging
+"""Plugin for maintaining 'tags' and 'categories'.
+
+These are actually mappings from (a) keyword to a set of pages.
+They become known after parsing of all eligible page files.
+"""
+# pylint: disable=invalid-name
+
+from collections.abc import Iterable
 from operator import itemgetter
+import logging
+from typing import Dict, List
 
-__all__ = ['PageTags', 'PageCategory']
+from thot.core import Page
 
-def add_to_keyed_list(key, collection, page, none_is_key=None):
-    if key in page:
-        if type(page[key]) is list:
-            drawer = page[key]
+__all__ = [
+    'PageTags', 'PageCategory',
+]
+
+def append_to_collection(
+    keywords_from_field: str,
+    collection: Dict[str, List[Page]],
+    page: Page, none_is_key=None,
+) -> None:
+    if keywords_from_field in page:
+        if isinstance(page[keywords_from_field], list):
+            keywords = page[keywords_from_field]
         else:
-            drawer = [page[key], ]
+            keywords = [page[keywords_from_field], ]
     elif none_is_key:
-        drawer = [none_is_key, ]
+        keywords = [none_is_key, ]
     else:
         return
 
-    for d in drawer:
-        if d in collection:
-            collection[d].append(page)
+    for word in keywords:
+        if word in collection:
+            collection[word].append(page)
         else:
-            collection[d] = [page, ]
+            collection[word] = [page, ]
 
 
 class PageTags(object):
@@ -41,33 +57,37 @@ class PageTags(object):
         self.collection = {} # tag -> list of pages
         logging.debug('Plugin "%s" has been initalized.', self)
 
-    def after_page_parsed(self, page):
+    def after_page_parsed(self, page: Page) -> None:
         """ Step 1: tags from page """
         if page.is_public:
-            add_to_keyed_list(self.field, self.collection, page, self.none_is_key)
+            append_to_collection(self.field, self.collection,
+                page, self.none_is_key)
 
-    def _pop_index_page(self, pages):
+    def _pop_index_page(self, pages: Iterable[Page]) -> Page:
         """
         Gets the page that servers as template for the field's index,
         removes it from the stack of pages if necessary.
         """
         for page in pages:
-            if 'index' in page:
-                if type(page['index']) is list and self.field in page['index']:
-                    if len(page['index']) <= 1:
-                        # exclude its common instance from usual parsing
-                        pages.remove(page)
-                    else:
-                        # just remove one function
-                        page['index'].remove(self.field)
-                    return page
-                elif page['index'] == self.field:
+            if 'index' not in page:
+                continue
+
+            if isinstance(page['index'], list) \
+               and self.field in page['index']:
+                if len(page['index']) <= 1:
                     # exclude its common instance from usual parsing
                     pages.remove(page)
-                    return page
+                else:
+                    # just remove one function
+                    page['index'].remove(self.field)
+                return page
+            elif page['index'] == self.field:
+                # exclude its common instance from usual parsing
+                pages.remove(page)
+                return page
         return None
 
-    def _get_url(self, page):
+    def _get_url(self, page: Page) -> str:
         """
         Suggests a functional url.
         """
@@ -76,7 +96,7 @@ class PageTags(object):
         url += '/index.html'
         return url
 
-    def after_parsing(self, pages):
+    def after_parsing(self, pages: Iterable[Page]) -> None:
         """
         Step 2: inject new parametrized pages
         which will serve as archive, category or tag indices.
@@ -84,15 +104,18 @@ class PageTags(object):
         # find the page with "index: tag"
         index_page = self._pop_index_page(pages)
         if not index_page:
-            logging.warn('Index page for "%s" could not be found.' \
-                         + ' Please create one with "{status: hidden, index: \'%s\'}".',
-                        self.field, self.field)
+            # pylint: disable=logging-not-lazy
+            logging.warning(
+                'Index page for "%s" could not be found.' \
+                + ' Please create one with "{status: hidden, index: \'%s\'}".',
+                self.field, self.field)
             return
 
         # inject it multiple times, parametrized
         for field_value in self.collection:
             # sort the collection
-            self.collection[field_value].sort(key=itemgetter('date', 'url'), reverse=True)
+            self.collection[field_value].sort(
+                key=itemgetter('date', 'url'), reverse=True)
             # index pages
             p = index_page.copy()
             params = dict(field=self.field,

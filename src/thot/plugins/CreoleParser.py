@@ -1,3 +1,7 @@
+"""Creole markup to HTML plugin.
+"""
+# pylint: disable=invalid-name
+
 from creole import creole2html
 
 from thot.parser import Parser
@@ -7,7 +11,6 @@ __all__ = [
 ]
 
 class CreoleParser(Parser):
-    "Creole to HTML parser."
     output_ext = 'html'
     parses = ['creole', 'cre']
 

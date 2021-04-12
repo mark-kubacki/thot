@@ -1,37 +1,47 @@
-import codecs
+"""Core mechanisms of Thot represented as classes.
+"""
+
 from collections import OrderedDict
 from datetime import datetime
-import imp
-import logging
-import types
 from operator import itemgetter
 from os import makedirs, utime
 from os.path import splitext, join, dirname, split, getmtime, \
                     basename, exists, relpath, isabs, isfile
-from shutil import rmtree, copytree, copystat
+from shutil import rmtree, copystat
+import codecs
+import gzip
+import imp
+import logging
 import sys
 import time
-import pytz
-import pkg_resources
 import weakref
-import gzip
+
+import pkg_resources
+import pytz
 
 from thot import parser, version as thot_version
+from thot.template import TemplateException, get_templating_cls
 from thot.url import get_url
 from thot.utils import copy_file, walk_ignore
-from thot.template import TemplateException, get_templating_cls
+
+__all__ = [
+    'Page', 'Site', 'FilesystemSource',
+]
 
 class Page(dict):
+    """
+    Page represents the lifecycle of a webpage.
+    """
 
-    def __init__(self, db, get_url, **kwargs):
-        super(Page, self).__init__(self, **kwargs)
+    def __init__(self, db, get_url_fn, **kwargs):
+        super().__init__(self, **kwargs)
         self.db = db
-        self.get_url = get_url
+        self.get_url = get_url_fn
         self.parser_cls = None
 
     @property
     def is_public(self):
-        "Return True if page is public"
+        """True if page is public."""
         return self['status'] != 'hidden'
 
     @property
@@ -39,7 +49,7 @@ class Page(dict):
         return 'content' in self
 
     def dont_render(self, now):
-        "True if the page shall be excluded from being rendered."
+        """True if the page shall be excluded from being rendered."""
         # skip drafts
         if self['status'] == 'draft' \
            or ('published' in self and not self['published']):
@@ -51,7 +61,7 @@ class Page(dict):
             return True
         # skip expired pages; i.e. with a passed expiry set
         elif 'expires' in self and self['expires'] < now:
-            logging.debug('skipping %s (expired)', page)
+            logging.debug('skipping %s (expired)', self)
             return True
         return False
 
@@ -73,7 +83,7 @@ class Page(dict):
         self['url'] = self.get_url(self)
 
     def parse(self): # throws parser.ParserException
-        headers, content = self.parser_inst.parse()
+        _, content = self.parser_inst.parse()
         # update the values in the page dict
         self['content'] = content
 
@@ -83,15 +93,23 @@ class Page(dict):
 
     def __str__(self):
         if 'url' in self:
-            return "Page(path=%s, url=%s)" % (self['path'] if 'path' in self else 'undefined', self['url'])
+            return 'Page(path=%s, url=%s)' % \
+                (self['path'] if 'path' in self \
+                else 'undefined', self['url'])
         else:
-            return "Page(path=%s)" % (self['path'] if 'path' in self else 'undefined')
+            return 'Page(path=%s)' % \
+                (self['path'] if 'path' in self \
+                else 'undefined')
 
     def __repr__(self):
         return str(self)
 
 
 class Site(object):
+    """
+    Site represents a collection of pages, i. e. usually an entire blog.
+    """
+
     def __init__(self, settings, data_source):
         self.settings = settings
         self.data_source = data_source
@@ -123,19 +141,20 @@ class Site(object):
                         self.processor_map[step].append(cls_instance)
                     else:
                         self.processor_map[step] = [cls_instance, ]
-            except Exception as e:
-                logging.warn('Processor "%s" has not been loaded due to: %s',
-                              entrypoint, e)
+            except Exception as e: # pylint: disable=broad-except
+                logging.warning(
+                    'Processor "%s" has not been loaded due to: %s',
+                    entrypoint, e)
 
     def processors_for(self, step):
-        "Gets a list of processors for the given step."
+        """Gets a list of processors for the given step."""
         if step in self.processor_map:
             return self.processor_map[step]
         else:
             return []
 
     def _parse(self, input_data):
-        "Parses the input data"
+        """Parses the input data."""
         now = self.settings['build_time']
         for input_dir in input_data:
             pages, static_files = input_data[input_dir]
@@ -176,16 +195,16 @@ class Site(object):
             proc.after_parsing(self.pages)
 
     def _sort(self):
-        "Sort pages by date (newest first)"
+        """Sort pages by date (newest first)."""
         self.pages.sort(key=itemgetter('date', 'url'), reverse=True)
 
     def _delete_output_dir(self):
-        "Deletes the output directory"
+        """Deletes the output directory."""
         if exists(self.settings['output_dir']):
             rmtree(self.settings['output_dir'])
 
     def _get_output_path(self, url):
-        "Returns the filesystem path for `url`"
+        """Returns the filesystem path for `url`."""
         if isabs(url):
             # omit starting slash char; if we wouldn't do this, the
             # join() below would return a path that starts from
@@ -201,12 +220,13 @@ class Site(object):
 
     def _render_pages(self):
         public_pages = [page for page in self.pages if page.is_public]
-        templating_engine = get_templating_cls(self.settings['templating_engine'])
+        templating_engine = \
+            get_templating_cls(self.settings['templating_engine'])
         template_cls = templating_engine(self.settings)
 
         for page in self.pages:
             if 'rendered' in page:
-                logging.warning('Page %s has already been rendered, skipping', page)
+                logging.warning('Skipping already rendered page %s', page)
                 continue
             page['output_path'] = self._get_output_path(page['url'])
 
@@ -221,13 +241,14 @@ class Site(object):
             try:
                 logging.debug('About to render "%s".', page['output_path'])
                 params = page['params'] if 'params' in page else {}
-                page['rendered'] = render_func(template,
-                                       page=page,
-                                       pages=public_pages,
-                                       settings=self.settings,
-                                       thot_version=thot_version,
-                                       **params)
-                assert type(page['rendered']) == str
+                page['rendered'] = render_func(
+                    template,
+                    page=page,
+                    pages=public_pages,
+                    settings=self.settings,
+                    thot_version=thot_version,
+                    **params)
+                assert isinstance(page['rendered'], str)
             except TemplateException as error:
                 logging.error(error)
                 logging.error('skipping article "%s"', page['path'])
@@ -237,7 +258,7 @@ class Site(object):
                 proc.after_rendering(page)
 
     def _write(self):
-        "Writes the parsed data to the filesystem"
+        """Writes the parsed data to the filesystem."""
         for page in self.pages:
             output_path = page['output_path']
 
@@ -248,7 +269,7 @@ class Site(object):
                 pass
 
             # write to filesystem
-            logging.debug("writing %s to %s", page['path'], output_path)
+            logging.debug('writing %s to %s', page['path'], output_path)
             with open(output_path, 'wb') as f:
                 f.write(page['rendered'])
             page_dt_for_fs = page['mtime'].astimezone(self.settings['build_tz'])
@@ -264,18 +285,21 @@ class Site(object):
 
     def _copy_static_file(self, static_file, dst):
         logging.debug('copying %s to %s', static_file, dst)
-        if copy_file(static_file, dst, self.settings['hardlinks']) \
-           and self.settings['make_compressed_copy']:
-            for ending in self.settings['compress_if_ending']:
-                if static_file.endswith(ending):
-                    if not isfile(static_file+'.gz'):
-                        with open(static_file, 'rb') as fin, gzip.open(dst+'.gz', 'wb') as fout:
-                            fout.writelines(fin)
-                        copystat(static_file, dst+'.gz')
-                    break
+        if not (copy_file(static_file, dst, self.settings['hardlinks']) \
+           and self.settings['make_compressed_copy']):
+            return
+        for ending in self.settings['compress_if_ending']:
+            if not static_file.endswith(ending):
+                continue
+            if not isfile(static_file+'.gz'):
+                with open(static_file, 'rb') as fin, \
+                        gzip.open(dst+'.gz', 'wb') as fout:
+                    fout.writelines(fin)
+                copystat(static_file, dst+'.gz')
+            break
 
     def _copy_static_files(self):
-        "Copies static files to output directory"
+        """Copies static files to output directory."""
         # static files that aren't associated with pages
         for static_file in self.static_files:
             dst = join(self.settings['output_dir'],
@@ -294,9 +318,10 @@ class Site(object):
             self._copy_static_file(static_file, dst)
 
     def run(self):
+        """Transforms all input and writes to the output directory."""
         start_time = time.time()
         input_data = self.data_source.read_files()
-        logging.debug("input data %s", input_data)
+        logging.debug('input data %s', input_data)
         self._parse(input_data)
         self._sort()
         self._render_pages()
@@ -305,7 +330,7 @@ class Site(object):
         self._copy_static_files()
         finish_time = time.time()
         count = len(self.pages)
-        print(("OK (%s %s; %s seconds)" % (
+        print(('OK (%s %s; %s seconds)' % (
             count, 'page' if count == 1 else 'pages',
             round(finish_time - start_time, 2))))
 
@@ -313,11 +338,10 @@ class Site(object):
 class FilesystemSource(object):
     """
     Source of pages which are read from filesystem.
-
-    ... and not a database, for example.
     """
 
-    def __init__(self, project_dir, build_time, build_tz, default_template, page_defaults):
+    def __init__(self, project_dir, build_time, build_tz,
+                 default_template, page_defaults):
         self.project_dir = project_dir
         self.build_time = build_time
         self.build_tz = build_tz
@@ -334,7 +358,7 @@ class FilesystemSource(object):
         and static files (file extensions for which no parser exists)
         """
         data = OrderedDict()
-        for root, dirs, files in walk_ignore(self.project_dir):
+        for root, _, files in walk_ignore(self.project_dir):
             pages = []
             parseables = [] # parseable files; rename to (pages)
             static = [] # rename to (static)
@@ -376,13 +400,14 @@ class FilesystemSource(object):
         return data
 
     def _create_page(self, path, static_files):
-        page = Page(db=self, get_url=self.get_url, static_files=static_files)
+        page = Page(db=self, get_url_fn=self.get_url, static_files=static_files)
         page.update(self.page_defaults.copy())
         page.update(self._get_default_headers(path))
         return page
 
     def read(self, path):
-        with codecs.open(join(self.project_dir, path), 'r', encoding='utf-8') as f:
+        with codecs.open(join(self.project_dir, path), 'r',
+                         encoding='utf-8') as f:
             return f.read()
 
     def _get_default_headers(self, path):

@@ -1,10 +1,16 @@
-from trac.core import *
+"""Plugin for ingesting content in Trac's markup.
+
+Use this to translate legacy Trac wikis.
+"""
+# pylint: disable=invalid-name
+
 from trac.mimeview import Context
 from trac.test import Mock, MockPerm, EnvironmentStub
 from trac.web.href import Href
 from trac.wiki.formatter import HtmlFormatter
 
-# importing from trac.wiki.macros registers all macros contained in that module
+# Importing from trac.wiki.macros registers all macros contained in that module.
+# pylint: disable=unused-import
 from trac.wiki.macros import WikiMacroBase
 
 from thot.parser import Parser
@@ -16,7 +22,7 @@ __all__ = [
 class TracParser(Parser):
     """
     Parser of Trac wiki pages into HTML.
-    
+
     Does not support processors (syntax highlighting) and only a limited set
     of macros.
     """
@@ -36,13 +42,13 @@ class TracParser(Parser):
         # -- macros support
         env.path = ''
         # -- intertrac support
-        env.config.set('intertrac', 'trac.title', "Trac's Trac")
+        env.config.set('intertrac', 'trac.title', 'Trac\'s Trac')
         env.config.set('intertrac', 'trac.url',
                        website_url)
         env.config.set('intertrac', 't', 'trac')
-        env.config.set('intertrac', 'th.title', "Trac Hacks")
+        env.config.set('intertrac', 'th.title', 'Trac Hacks')
         env.config.set('intertrac', 'th.url',
-                       "http://trac-hacks.org")
+                       'http://trac-hacks.org')
         env.config.set('intertrac', 'th.compat', 'false')
         # -- safe schemes
         env.config.set('wiki', 'safe_schemes',
@@ -56,9 +62,16 @@ class TracParser(Parser):
     def _parse_text(self):
         env, context = self.create_trac_ctx(
             self.settings['website_url'],
-            self.headers['author']['name'] if ('author' in self.headers and 'name' in self.headers['author']) else self.settings['author']['name'],
-            str(self.headers['timezone']) if 'timezone' in self.headers else str(self.settings['timezone']),
-            self.filename if self.filename.startswith('/') else '/'+self.filename)
+            self.headers['author']['name'] \
+                if ('author' in self.headers \
+                    and 'name' in self.headers['author']) \
+                else self.settings['author']['name'],
+            str(self.headers['timezone']) \
+                if 'timezone' in self.headers \
+                else str(self.settings['timezone']),
+            self.filename \
+                if self.filename.startswith('/') \
+                else '/'+self.filename)
         formatter = HtmlFormatter(env, context, self.text)
         self.text = formatter.generate()
 

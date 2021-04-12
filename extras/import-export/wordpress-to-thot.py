@@ -1,24 +1,23 @@
 #!/bin/env python
-from os import getlogin, makedirs, path, utime
 from collections import OrderedDict
 from datetime import datetime
+from os import getlogin, makedirs, path, utime
 import codecs
 import logging
 import re
 import time
 
 import MySQLdb as mdb
-import yaml
 import pytz
+import yaml
 
-from anzu.options import parse_command_line, enable_pretty_logging
 from anzu.escape import xhtml_unescape
+from anzu.options import parse_command_line, enable_pretty_logging
 from export_helper import get_page, get_part_of_page, get_gravatar_for
 
 enable_pretty_logging()
 parse_command_line()
 
-list_type = type([])
 GMT = pytz.timezone('GMT')
 # current user/system timezone
 build_tz = pytz.timezone(time.strftime("%Z", time.gmtime()))
@@ -124,7 +123,7 @@ if export_posts:
 		post = dict(list(zip([c[0] for c in cur.description], row)))
 		postfile_path = path.join(outdir, str(post['date'].year), "%02d" % post['date'].month, post['cruft']+'.html')
 		if path.exists(postfile_path):
-			logging.warn('skipping "%s" (already exists or name conflict)', postfile_path)
+			logging.warning('skipping "%s" (already exists or name conflict)', postfile_path)
 			continue
 		logging.debug('working on "%s"', postfile_path)
 		### post['template'] = 'post.mak'
@@ -136,13 +135,15 @@ if export_posts:
 		# add category, tags and author
 		if post['ID'] in labels:
 			post.update(labels[post['ID']])
-			if 'category' in post and list_type == type(post['category']) and 1 == len(post['category']):
+			if 'category' in post \
+				and isinstance(post['category'], list) \
+				and 1 == len(post['category']):
 				post['category'] = post['category'][0]
 		if len(authors) >= 2:
 			if post['post_author'] in authors:
 				post['author'] = authors[post['post_author']]
 			else:
-				logging.warn('author with ID %d is unknown; post "%s" will have no author', post['post_author'], postfile_path)
+				logging.warning('author with ID %d is unknown; post "%s" will have no author', post['post_author'], postfile_path)
 		del post['post_author']
 		del post['ID']
 		# remove fields which are empty or unnecessary
@@ -268,7 +269,7 @@ if export_comments:
 			if not path.exists(target_dir):
 				makedirs(target_dir)
 		if path.exists(postfile_path):
-			logging.warn('skipping "%s" (already exists or name conflict)', postfile_path)
+			logging.warning('skipping "%s" (already exists or name conflict)', postfile_path)
 			continue
 		for c in comments_by_page[postfile_path]:
 			del c['post_date']

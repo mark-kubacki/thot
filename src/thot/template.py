@@ -1,3 +1,5 @@
+"""Templating engines are collected here."""
+
 import pkg_resources
 
 __all__ = [
@@ -13,8 +15,8 @@ templating_map = dict()
 def get_templating_cls(shortname):
     if shortname in templating_map:
         return templating_map[shortname]
-    for entrypoint in pkg_resources.iter_entry_points('thot.templating_engines'):
-        if entrypoint.name == shortname:
-            cls = entrypoint.load()
+    for e in pkg_resources.iter_entry_points('thot.templating_engines'):
+        if e.name == shortname:
+            cls = e.load()
             templating_map[shortname] = cls
             return cls

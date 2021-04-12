@@ -1,3 +1,7 @@
+"""Plugin for ingesting ReStructuredText.
+"""
+# pylint: disable=invalid-name
+
 import os
 import logging
 
@@ -7,19 +11,19 @@ from docutils.parsers.rst import directives, roles, Directive
 from docutils.writers import html4css1
 
 from thot.parser import Parser
-from thot.utils import supported_image_formats, default_image_format, render_latex_to_image, embed_image
+from thot.utils import supported_image_formats, default_image_format, \
+    render_latex_to_image, embed_image
 
 __all__ = [
     'RstParser',
 ]
 
 try:
-    import pygments
     from pygments import highlight
     from pygments.formatters import HtmlFormatter
     from pygments.lexers import get_lexer_by_name, TextLexer
     has_pygments = True
-except:
+except ModuleNotFoundError:
     has_pygments = False
 
 
@@ -43,23 +47,33 @@ class eqref(nodes.Inline, nodes.TextElement):
 
 
 def math_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
+    # pylint: disable=unused-argument, dangerous-default-value
+    # Retain the signature for later.
     latex = utils.unescape(text, restore_backslashes=True)
     return [math(
         latex=latex,
-        image_format=options['image_format'] if 'image_format' in options else default_image_format
+        image_format=options['image_format'] \
+            if 'image_format' in options \
+            else default_image_format \
         )], []
 
 def eq_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
+    # pylint: disable=unused-argument, dangerous-default-value
     text = utils.unescape(text)
     node = eqref('(?)', '(?)', target=text)
     try:
         node['docname'] = inliner.document.settings.env.docname
-    except:
+    except: # pylint: disable=bare-except
         pass
     return [node], []
 
 
 class MathDirective(Directive):
+    """
+    Extension to RST for rendering 'math' using LaTeX.
+
+    Registered globally in docutils.parsers.rst by register_directive(…).
+    """
 
     has_content = True
     required_arguments = 0
@@ -69,7 +83,8 @@ class MathDirective(Directive):
         'label': directives.unchanged,
         'name': directives.unchanged,
         'nowrap': directives.flag,
-        'image_format': lambda arg: directives.choice(arg, supported_image_formats),
+        'image_format': \
+            lambda arg: directives.choice(arg, supported_image_formats),
     }
 
     def run(self):
@@ -82,11 +97,12 @@ class MathDirective(Directive):
         if node['label'] is None:
             node['label'] = self.options.get('label', None)
         node['nowrap'] = 'nowrap' in self.options
-        node['image_format'] = self.options.get('image_format', default_image_format)
+        node['image_format'] = \
+            self.options.get('image_format', default_image_format)
 
         try:
             node['docname'] = self.state.document.settings.env.docname
-        except:
+        except: # pylint: disable=bare-except
             pass
         ret = [node]
         set_source_info(self, node)
@@ -101,7 +117,8 @@ class MathDirective(Directive):
 # from pygments.external.rst-directive
 
 class PygmentsDirective(Directive):
-    """ Source code syntax hightlighting.
+    """
+    Source code syntax hightlighting.
     """
     required_arguments = 1
     optional_arguments = 0
@@ -111,9 +128,7 @@ class PygmentsDirective(Directive):
 
     def run(self):
         """
-        Parse sourcecode using Pygments
-
-        From http://bitbucket.org/birkenfeld/pygments-main/src/tip/external/rst-directive-old.py
+        Parse sourcecode using Pygments.
         """
         try:
             lexer = get_lexer_by_name(self.arguments[0])
@@ -129,6 +144,9 @@ class PygmentsDirective(Directive):
 # original work
 
 class ThotHTMLWriter(html4css1.Writer):
+    """
+    Writer to attach the 'translator' for additional directives.
+    """
 
     def __init__(self):
         html4css1.Writer.__init__(self)
@@ -136,9 +154,12 @@ class ThotHTMLWriter(html4css1.Writer):
 
 
 class ThotHTMLTranslator(html4css1.HTMLTranslator):
+    """
+    Visitor of custom directives created above.
+    """
 
-    def _wrap_displaymath(self, math, label=None):
-        parts = math.split('\n\n')
+    def _wrap_displaymath(self, latex_text, label=None):
+        parts = latex_text.split('\n\n')
         ret = []
         for i, part in enumerate(parts):
             if label is not None and i == 0:
@@ -160,12 +181,13 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
             return '<img class="math" src="%s" alt="%s" />' % \
                    (embedded_image, alt_text)
         else:
-            logging.error('something went horribly wrong at rendering the formula: %s',
-                          latex)
+            logging.error('Rendering the formula has failed: %s', latex)
             return None
 
     def visit_math(self, node):
-        elem = self._render_math('$' + node['latex'] + '$', node['latex'], node['image_format'])
+        elem = self._render_math(
+            '$' + node['latex'] + '$',
+            node['latex'], node['image_format'])
         if elem:
             self.body.append(elem)
         raise nodes.SkipNode
@@ -180,7 +202,8 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
             self.body.append(self.starttag(node, 'div', CLASS='math'))
             self.body.append('<p>')
             if 'number' in node and node['number']:
-                self.body.append('<span class="eqno">(%s)</span>' % node['number'])
+                self.body.append(
+                    '<span class="eqno">(%s)</span>' % node['number'])
             self.body.append(elem)
             self.body.append('</p></div>')
         raise nodes.SkipNode
@@ -188,7 +211,7 @@ class ThotHTMLTranslator(html4css1.HTMLTranslator):
     def visit_eqref(self, node):
         self.body.append('<a href="#equation-%s">' % node['target'])
 
-    def depart_eqref(self, node):
+    def depart_eqref(self, _):
         self.body.append('</a>')
 
 
@@ -202,14 +225,17 @@ if has_pygments:
         'sourcecode', PygmentsDirective)
 
 class RstParser(Parser):
-    """ReStructuredText Parser"""
+    """The actual ReStructuredText parser.
+    """
     output_ext = 'html'
     parses = ['rst']
 
     def _parse_text(self):
-        self.text = publish_parts(source=self.text,
-                                  settings_overrides={
-                                        "doctitle_xform": False,
-                                        "initial_header_level": 2
-                                  },
-                                  writer=ThotHTMLWriter())['fragment']
+        self.text = publish_parts(
+            source=self.text,
+            settings_overrides={
+                'doctitle_xform': False,
+                'initial_header_level': 2
+            },
+            writer=ThotHTMLWriter()
+        )['fragment']
