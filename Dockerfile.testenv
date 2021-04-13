@@ -5,5 +5,12 @@ COPY . /usr/src/thot
 RUN pip --disable-pip-version-check \
       --cache-dir /var/cache/pip \
       install \
+        pylint \
         git+https://github.com/rst2pdf/wordaxe.git \
         "/usr/src/thot[jinja,code]"
+
+RUN curl -fLRsS \
+      "https://google.github.io/styleguide/pylintrc" \
+  | sed \
+      -e "/^indent-string=/s@  @    @" \
+  >/etc/pylintrc

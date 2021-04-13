@@ -10,14 +10,20 @@ steps:
   args: ['build', '--file=Dockerfile.testenv', '--tag=localhost/thot', '.']
 
 - name: 'localhost/thot'
-  id: 'quickstart with jinja2'
+  id: 'pylint'
   waitFor: ['build container with thot']
+  entrypoint: 'pylint'
+  args: ['setup.py', 'src']
+
+- name: 'localhost/thot'
+  id: 'quickstart with jinja2'
+  waitFor: ['pylint']
   dir: '/state'
   entrypoint: 'thot'
   args: ['--quickstart', '-t', 'jinja2', 'newJinja2Blog']
 - name: 'localhost/thot'
   id: 'quickstart with Mako'
-  waitFor: ['build container with thot']
+  waitFor: ['pylint']
   dir: '/state'
   entrypoint: 'thot'
   args: ['--quickstart', '-t', 'mako', '--logging', 'debug', 'newMakoBlog']
