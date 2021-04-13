@@ -101,6 +101,7 @@ setuptools.setup(
             'filesystem = thot.core:FilesystemSource',
         ],
     },
+    # pylint: disable=line-too-long
     install_requires = [
         'markdown',
         'docutils',
@@ -109,8 +110,8 @@ setuptools.setup(
         'PyYAML',
         'lxml >= 3.1.0',
         'pyphen >= 0.7',
-        'wordaxe >= 1.0.1',
-        'wordaxe >= 1.1.0 ; python_version>="3"',
+        'wordaxe >= 1.0.1 ; python_version<"3"',
+        'wordaxe @ git+https://github.com/rst2pdf/wordaxe@f392c3a2eae7a6f64dce5e882617fcac91797850 ; python_version>="3"',
         'Mako >= 0.4.0',
     ],
     tests_require=[

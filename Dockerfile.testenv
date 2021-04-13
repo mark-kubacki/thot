@@ -1,16 +1,39 @@
-FROM python:3_cloudbuild_cache
+FROM python:3
 
-COPY . /usr/src/thot
+# As this is no image meant for distribution and production,
+# redundancies are no flaw.
+COPY vendor /var/cache/pip/
 
-RUN pip --disable-pip-version-check \
-      --cache-dir /var/cache/pip \
-      install \
-        pylint \
-        git+https://github.com/rst2pdf/wordaxe.git \
-        "/usr/src/thot[jinja,code]"
-
-RUN curl -fLRsS \
+# Don't go with any existing pylintrc, for host images could change.
+# Set a referrer to give a hint who to contact on misbehaving CIs.
+RUN if [ ! -s /var/cache/pip/pylintrc ]; then \
+    curl --fail --location --silent --show-error \
+      --referer "https://github.com/wmark/thot" \
       "https://google.github.io/styleguide/pylintrc" \
-  | sed \
-      -e "/^indent-string=/s@  @    @" \
-  >/etc/pylintrc
+    | sed -e "/^indent-string=/s@  @    @" \
+    >/var/cache/pip/pylintrc; \
+    fi \
+ && cp -a /var/cache/pip/pylintrc /etc/pylintrc
+
+COPY setup.py README.rst /usr/src/thot/
+COPY src /usr/src/thot/src
+
+RUN if [ -s /var/cache/pip/requirements.txt ]; then \
+      pip --disable-pip-version-check \
+        --cache-dir /var/cache/pip \
+        install \
+        --no-index --find-links /var/cache/pip \
+          pylint \
+          "/usr/src/thot[jinja,code]"; \
+    else \
+      pip --disable-pip-version-check \
+        --cache-dir /var/cache/pip \
+        install \
+          pylint \
+          "/usr/src/thot[jinja,code]"; \
+      pip freeze --exclude thot >/var/cache/pip/requirements.txt; \
+      pip --disable-pip-version-check \
+        --cache-dir /var/cache/pip \
+        wheel --wheel-dir /var/cache/pip \
+          -r /var/cache/pip/requirements.txt; \
+    fi

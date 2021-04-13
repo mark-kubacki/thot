@@ -1,13 +1,28 @@
 timeout: 90s
 options:
+  env:
+  - 'PROJECT_ID=${PROJECT_ID}'
+  - 'REPO_NAME=${REPO_NAME}'
   volumes:
   - name: 'OUTPUT'
     path: '/state'
+  - name: 'PIPCACHE'
+    path: '/var/cache/pip'
 
 steps:
+- name: 'gcr.io/blitznote/cacheutil'
+  id: 'restore cached var-cache-pip'
+  waitFor: ['-']
+  args: ['restore', '/var/cache/pip']
 - name: 'gcr.io/cloud-builders/docker'
   id: 'build container with thot'
-  args: ['build', '--file=Dockerfile.testenv', '--tag=localhost/thot', '.']
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    cp -ra /var/cache/pip/* vendor/ || true
+    sed -i -e '/^FROM [a-z0-9]*:[^_]*$/s@$@_cloudbuild_cache@' Dockerfile*
+    docker build --file=Dockerfile.testenv --tag=localhost/thot .
 
 - name: 'localhost/thot'
   id: 'pylint'
@@ -27,3 +42,17 @@ steps:
   dir: '/state'
   entrypoint: 'thot'
   args: ['--quickstart', '-t', 'mako', '--logging', 'debug', 'newMakoBlog']
+
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'capture cache from image'
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    set -e
+    docker create -ti --name cache_source localhost/thot bash
+    docker cp cache_source:/var/cache/pip /var/cache/
+- name: 'gcr.io/blitznote/cacheutil'
+  id: 'stash cached var-cache-pip'
+  waitFor: ['capture cache from image']
+  args: ['stash', '/var/cache/pip']
